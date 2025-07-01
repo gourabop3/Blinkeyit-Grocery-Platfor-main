@@ -38,11 +38,6 @@ const Login = () => {
 
     console.log("[LOGIN PAGE] Submitting", data);
 
-    if (data.password !== data.confirmPassword) {
-      toast.error("Password and confirm password must be same");
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await Axios({
@@ -63,12 +58,7 @@ const Login = () => {
           refreshToken: response.data.data.refreshToken?.slice(0, 10) + "...",
         });
 
-        setData({
-          name: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-        });
+        setData({ email: "", password: "" });
 
         sessionStorage.setItem("accesstoken", response.data.data.accesstoken);
         sessionStorage.setItem("refreshToken", response.data.data.refreshToken);

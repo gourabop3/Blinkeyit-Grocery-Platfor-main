@@ -19,24 +19,29 @@ const CashOnDeliveryOrderController = async (request, response) => {
         },
       }));
 
-    const payload = list_items.map((el) => {
-      return {
-        userId: userId,
-        orderId: `ORD-${new mongoose.Types.ObjectId()}`,
-        productId: el.productId._id,
-        product_details: {
-          name: el.productId.name,
-          image: el.productId.image,
-        },
-        paymentId: "",
-        payment_status: "CASH ON DELIVERY",
-        delivery_address: addressId,
-        subTotalAmt: subTotalAmt,
-        totalAmt: totalAmt,
-      };
+    const orderId = `ORD-${new mongoose.Types.ObjectId()}`;
+
+    const productsPayload = list_items.map((el) => ({
+      productId: el.productId._id,
+      quantity: el.quantity || 1,
+      product_details: {
+        name: el.productId.name,
+        image: el.productId.image,
+      },
+    }));
+
+    const orderDoc = new OrderModel({
+      userId,
+      orderId,
+      products: productsPayload,
+      paymentId: "",
+      payment_status: "CASH ON DELIVERY",
+      delivery_address: addressId,
+      subTotalAmt,
+      totalAmt,
     });
 
-    const generatedOrder = await OrderModel.insertMany(payload);
+    const generatedOrder = await orderDoc.save();
 
     // 🔽 Decrement stock for ordered products
     try {
@@ -139,28 +144,23 @@ const getOrderProductItems = async ({
   paymentId,
   payment_status,
 }) => {
-  const productList = [];
+  const products = [];
+  let subTotal = 0;
 
   if (lineItems?.data?.length) {
     for (const item of lineItems.data) {
       const product = await Stripe.products.retrieve(item.price.product);
 
-      const paylod = {
-        userId: userId,
-        orderId: `ORD-${new mongoose.Types.ObjectId()}`,
+      products.push({
         productId: product.metadata.productId,
+        quantity: item.quantity,
         product_details: {
           name: product.name,
           image: product.images,
         },
-        paymentId: paymentId,
-        payment_status: payment_status,
-        delivery_address: addressId,
-        subTotalAmt: Number(item.amount_total / 100),
-        totalAmt: Number(item.amount_total / 100),
-      };
+      });
 
-      productList.push(paylod);
+      subTotal += Number(item.amount_total / 100);
     }
 
     // After iterating, reduce stock in DB
@@ -184,7 +184,20 @@ const getOrderProductItems = async ({
     }
   }
 
-  return productList;
+  const orderDoc = new OrderModel({
+    userId,
+    orderId: `ORD-${new mongoose.Types.ObjectId()}`,
+    products,
+    paymentId,
+    payment_status,
+    delivery_address: addressId,
+    subTotalAmt: subTotal,
+    totalAmt: subTotal,
+  });
+
+  await orderDoc.save();
+
+  return orderDoc;
 };
 
 //http://localhost:8080/api/order/webhook
@@ -202,18 +215,15 @@ const webhookStripe = async (request, response) => {
         session.id
       );
       const userId = session.metadata.userId;
-      const orderProduct = await getOrderProductItems({
-        lineItems: lineItems,
-        userId: userId,
+      const orderDoc = await getOrderProductItems({
+        lineItems,
+        userId,
         addressId: session.metadata.addressId,
         paymentId: session.payment_intent,
         payment_status: session.payment_status,
       });
 
-      const order = await OrderModel.insertMany(orderProduct);
-
-      console.log(order);
-      if (Boolean(order[0])) {
+      if (orderDoc) {
         const removeCartItems = await UserModel.findByIdAndUpdate(userId, {
           shopping_cart: [],
         });

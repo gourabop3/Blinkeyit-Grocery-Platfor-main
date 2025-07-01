@@ -22,17 +22,19 @@ Axios.interceptors.request.use(
   }
 );
 
-//extend the life span of access token with
-// the help refresh
-Axios.interceptors.request.use(
-  (response) => {
-    return response;
-  },
+// Extend the life span of the access token with the help of refresh token
+Axios.interceptors.response.use(
+  (response) => response,
   async (error) => {
-    let originRequest = error.config;
+    // If we receive a 401 Unauthorized, try to refresh the access token
+    const originalRequest = error.config;
 
-    if (error.response.status === 401 && !originRequest.retry) {
-      originRequest.retry = true;
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
 
       const refreshToken = sessionStorage.getItem("refreshToken");
 
@@ -40,8 +42,8 @@ Axios.interceptors.request.use(
         const newAccessToken = await refreshAccessToken(refreshToken);
 
         if (newAccessToken) {
-          originRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          return Axios(originRequest);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return Axios(originalRequest);
         }
       }
     }

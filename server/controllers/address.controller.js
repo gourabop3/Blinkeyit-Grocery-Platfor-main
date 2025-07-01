@@ -7,13 +7,22 @@ const addAddressController = async (request, response) => {
     const { address_line, city, state, pincode, country, mobile } =
       request.body;
 
+    // Basic validation
+    if (!address_line || !city || !state || !pincode || !country || !mobile) {
+      return response.status(400).json({
+        message: "Provide address_line, city, state, country, pincode, mobile",
+        error: true,
+        success: false,
+      });
+    }
+
     const createAddress = new AddressModel({
-      address_line,
-      city,
-      state,
-      country,
-      pincode,
-      mobile,
+      address_line: address_line.trim(),
+      city: city.trim(),
+      state: state.trim(),
+      country: country.trim(),
+      pincode: String(pincode).trim(),
+      mobile: String(mobile).trim(),
       userId: userId,
     });
     const saveAddress = await createAddress.save();
@@ -68,15 +77,31 @@ const updateAddressController = async (request, response) => {
     const { _id, address_line, city, state, country, pincode, mobile } =
       request.body;
 
+    if (!_id) {
+      return response.status(400).json({
+        message: "Provide address _id",
+        error: true,
+        success: false,
+      });
+    }
+
+    if (!address_line && !city && !state && !country && !pincode && !mobile) {
+      return response.status(400).json({
+        message: "Provide at least one field to update",
+        error: true,
+        success: false,
+      });
+    }
+
     const updateAddress = await AddressModel.updateOne(
       { _id: _id, userId: userId },
       {
-        address_line,
-        city,
-        state,
-        country,
-        mobile,
-        pincode,
+        ...(address_line && { address_line }),
+        ...(city && { city }),
+        ...(state && { state }),
+        ...(country && { country }),
+        ...(mobile && { mobile }),
+        ...(pincode && { pincode }),
       }
     );
 

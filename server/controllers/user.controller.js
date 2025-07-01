@@ -359,6 +359,26 @@ const updateUserDetails = async (request, response) => {
     const userId = request.userId; //auth middleware
     const { name, email, mobile, password } = request.body;
 
+    if (!name && !email && !mobile && !password) {
+      return response.status(400).json({
+        message: "Provide at least one field to update (name, email, mobile, password)",
+        error: true,
+        success: false,
+      });
+    }
+
+    // If email is being changed, ensure uniqueness
+    if (email) {
+      const emailExists = await UserModel.findOne({ email, _id: { $ne: userId } });
+      if (emailExists) {
+        return response.status(400).json({
+          message: "Email is already in use",
+          error: true,
+          success: false,
+        });
+      }
+    }
+
     let hashPassword = "";
 
     if (password) {

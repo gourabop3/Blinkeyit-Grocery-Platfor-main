@@ -9,6 +9,12 @@ const Axios = axios.create({
 //sending access token in the header
 Axios.interceptors.request.use(
   async (config) => {
+    // Debug log: outgoing request
+    console.log("[AXIOS][REQUEST]", {
+      method: config.method,
+      url: config.baseURL + config.url,
+      withAuth: Boolean(config.headers.Authorization),
+    });
     const accessToken = sessionStorage.getItem("accesstoken");
 
     if (accessToken) {
@@ -22,17 +28,36 @@ Axios.interceptors.request.use(
   }
 );
 
-//extend the life span of access token with
-// the help refresh
-Axios.interceptors.request.use(
+// Extend the life span of the access token with the help of refresh token
+Axios.interceptors.response.use(
   (response) => {
+    console.log("[AXIOS][RESPONSE]", {
+      url: response.config.url,
+      status: response.status,
+      success: true,
+    });
     return response;
   },
   async (error) => {
-    let originRequest = error.config;
+    if (error.response) {
+      console.log("[AXIOS][RESPONSE][ERROR]", {
+        url: error.config?.url,
+        status: error.response.status,
+        data: error.response.data,
+      });
+    } else {
+      console.log("[AXIOS][ERROR] Network or CORS", error.message);
+    }
 
-    if (error.response.status === 401 && !originRequest.retry) {
-      originRequest.retry = true;
+    if (!error.response) {
+      // Network / CORS error or request was cancelled
+      return Promise.reject(error);
+    }
+
+    const originalRequest = error.config;
+
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
       const refreshToken = sessionStorage.getItem("refreshToken");
 
@@ -40,8 +65,8 @@ Axios.interceptors.request.use(
         const newAccessToken = await refreshAccessToken(refreshToken);
 
         if (newAccessToken) {
-          originRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          return Axios(originRequest);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return Axios(originalRequest);
         }
       }
     }

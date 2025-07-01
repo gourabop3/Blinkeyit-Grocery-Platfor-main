@@ -9,7 +9,6 @@ const generatedOtp = require("../utils/generatedOTP.js");
 const forgotPasswordTemplate = require("../utils/forgotPasswordTemplate.js");
 const jwt = require("jsonwebtoken");
 const mailSender = require("../config/sendEmail.js");
-const generatedRefreshToken = require("../utils/generatedRefreshToken.js");
 
 const registerUserController = async (request, response) => {
   try {
@@ -200,6 +199,8 @@ const loginController = async (request, response) => {
   try {
     const { email, password } = request.body;
 
+    console.log("[LOGIN] Incoming request", { email });
+
     if (!email || !password) {
       return response.status(400).json({
         message: "Provide email and password",
@@ -209,6 +210,8 @@ const loginController = async (request, response) => {
     }
 
     const user = await UserModel.findOne({ email });
+
+    console.log("[LOGIN] User lookup", { found: Boolean(user) });
 
     if (!user) {
       return response.status(400).json({
@@ -228,6 +231,8 @@ const loginController = async (request, response) => {
 
     const checkPassword = await bcryptjs.compare(password, user.password);
 
+    console.log("[LOGIN] Password match", { match: checkPassword });
+
     if (!checkPassword) {
       return response.status(400).json({
         message: "Incorrect password",
@@ -237,7 +242,9 @@ const loginController = async (request, response) => {
     }
 
     const accesstoken = await generatedAccessToken(user._id);
-    const refreshToken = await generatedRefreshToken(user._id);
+    const refreshToken = await genertedRefreshToken(user._id);
+
+    console.log("[LOGIN] Tokens generated", { accesstokenLength: accesstoken.length, refreshTokenLength: refreshToken.length });
 
     await UserModel.findByIdAndUpdate(user._id, {
       last_login_date: new Date(),
@@ -250,8 +257,13 @@ const loginController = async (request, response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
+    // ⚠️ If running on localhost over HTTP, secure:true cookies will be ignored.
+    // You can toggle this based on NODE_ENV if necessary.
+
     response.cookie("accessToken", accesstoken, cookiesOption);
     response.cookie("refreshToken", refreshToken, cookiesOption);
+
+    console.log("[LOGIN] Cookies set and success response going out");
 
     return response.json({
       message: "Login successfully",
@@ -269,8 +281,10 @@ const loginController = async (request, response) => {
       },
     });
   } catch (error) {
+    console.error("[LOGIN] Error", error);
     return response.status(500).json({
-      message: error.message || error,
+      message: error.message || "Internal Server Error",
+      stack: error.stack,
       error: true,
       success: false,
     });
@@ -564,7 +578,7 @@ const refreshToken = async (request, response) => {
       });
     }
 
-    const userId = verifyToken?._id;
+    const userId = verifyToken?.id;
 
     const newAccessToken = await generatedAccessToken(userId);
 

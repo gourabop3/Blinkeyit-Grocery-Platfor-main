@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Axios from "../utils/Axios";
 import SummaryApi from "../common/SummaryApi";
+import toast from "react-hot-toast";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -11,7 +12,10 @@ const VerifyEmail = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const response = await Axios({ ...SummaryApi.verifyEmail, code: code });
+        const response = await Axios({
+          ...SummaryApi.verifyEmail,
+          params: { code },
+        });
 
         if (response.data.success) {
           toast.success("Email Verified Successfully!");

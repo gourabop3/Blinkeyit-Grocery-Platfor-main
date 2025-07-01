@@ -5,27 +5,49 @@ const createProductController = async (request, response) => {
     const {
       name,
       image,
-      category,
-      subCategory,
+      category = [],
+      subCategory = [],
       unit,
       stock,
       price,
-      discount,
+      discount = 0,
       description,
       more_details,
     } = request.body;
 
+    // ✅ Sanitize & transform incoming arrays (may contain full objects from client)
+    const categoryIds = (Array.isArray(category) ? category : [category]).map((c) =>
+      typeof c === "string" ? c : c?._id
+    );
+    const subCategoryIds = (Array.isArray(subCategory) ? subCategory : [subCategory]).map((sc) =>
+      typeof sc === "string" ? sc : sc?._id
+    );
+
+    // ✅ Coerce numeric fields to Number for consistency
+    const numericStock = Number(stock) || 0;
+    const numericPrice = Number(price) || 0;
+    const numericDiscount = Number(discount) || 0;
+
+    // ✅ Validation
     if (
       !name ||
-      !image[0] ||
-      !category[0] ||
-      !subCategory[0] ||
+      !image?.length ||
+      !categoryIds.length ||
+      !subCategoryIds.length ||
       !unit ||
-      !price ||
+      !numericPrice ||
       !description
     ) {
       return response.status(400).json({
-        message: "Enter required fields",
+        message: "Required fields are missing",
+        error: true,
+        success: false,
+      });
+    }
+
+    if (numericDiscount < 0 || numericDiscount > 100) {
+      return response.status(400).json({
+        message: "Discount must be between 0 and 100",
         error: true,
         success: false,
       });
@@ -34,12 +56,12 @@ const createProductController = async (request, response) => {
     const product = new ProductModel({
       name,
       image,
-      category,
-      subCategory,
+      category: categoryIds,
+      subCategory: subCategoryIds,
       unit,
-      stock,
-      price,
-      discount,
+      stock: numericStock,
+      price: numericPrice,
+      discount: numericDiscount,
       description,
       more_details,
     });
@@ -257,12 +279,54 @@ const updateProductDetails = async (request, response) => {
       });
     }
 
-    const updateProduct = await ProductModel.updateOne(
-      { _id: _id },
-      {
-        ...request.body,
-      }
+    // Extract allowed fields and sanitize
+    const {
+      name,
+      image,
+      category = [],
+      subCategory = [],
+      unit,
+      stock,
+      price,
+      discount,
+      description,
+      more_details,
+      publish,
+    } = request.body;
+
+    const categoryIds = (Array.isArray(category) ? category : [category]).map((c) =>
+      typeof c === "string" ? c : c?._id
     );
+    const subCategoryIds = (Array.isArray(subCategory) ? subCategory : [subCategory]).map((sc) =>
+      typeof sc === "string" ? sc : sc?._id
+    );
+
+    const payload = {
+      ...(name && { name }),
+      ...(Array.isArray(image) && image.length && { image }),
+      ...(categoryIds.length && { category: categoryIds }),
+      ...(subCategoryIds.length && { subCategory: subCategoryIds }),
+      ...(unit && { unit }),
+      ...(stock !== undefined && { stock: Number(stock) }),
+      ...(price !== undefined && { price: Number(price) }),
+      ...(discount !== undefined && { discount: Number(discount) }),
+      ...(description && { description }),
+      ...(more_details && { more_details }),
+      ...(typeof publish === "boolean" && { publish }),
+    };
+
+    if (discount !== undefined) {
+      const discNum = Number(discount);
+      if (isNaN(discNum) || discNum < 0 || discNum > 100) {
+        return response.status(400).json({
+          message: "Discount must be between 0 and 100",
+          error: true,
+          success: false,
+        });
+      }
+    }
+
+    const updateProduct = await ProductModel.updateOne({ _id }, payload);
 
     return response.json({
       message: "updated successfully",

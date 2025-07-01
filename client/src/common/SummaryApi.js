@@ -1,4 +1,5 @@
-export const baseURL = import.meta.env.VITE_API_URL;
+// If VITE_API_URL is not set (local dev), fall back to backend default localhost port.
+export const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const SummaryApi = {
   register: {
@@ -18,7 +19,7 @@ const SummaryApi = {
     method: "put",
   },
   forgot_password_otp_verification: {
-    url: "api/user/verify-forgot-password-otp",
+    url: "/api/user/verify-forgot-password-otp",
     method: "put",
   },
   resetPassword: {
@@ -26,7 +27,7 @@ const SummaryApi = {
     method: "put",
   },
   refreshToken: {
-    url: "api/user/refresh-token",
+    url: "/api/user/refresh-token",
     method: "post",
   },
   userDetails: {

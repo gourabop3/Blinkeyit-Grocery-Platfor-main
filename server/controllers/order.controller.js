@@ -3,11 +3,21 @@ const Stripe = require("../config/stripe.js");
 const CartProductModel = require("../models/cartProduct.model.js");
 const OrderModel = require("../models/order.model.js");
 const UserModel = require("../models/user.model.js");
+const ProductModel = require("../models/product.model.js");
 
 const CashOnDeliveryOrderController = async (request, response) => {
   try {
     const userId = request.userId; // auth middleware
     const { list_items, totalAmt, addressId, subTotalAmt } = request.body;
+
+    // Function to build bulkWrite operations for stock decrement
+    const buildStockOps = (items) =>
+      items.map((el) => ({
+        updateOne: {
+          filter: { _id: el.productId._id || el.productId },
+          update: { $inc: { stock: -el.quantity || -1 } },
+        },
+      }));
 
     const payload = list_items.map((el) => {
       return {
@@ -27,6 +37,14 @@ const CashOnDeliveryOrderController = async (request, response) => {
     });
 
     const generatedOrder = await OrderModel.insertMany(payload);
+
+    // 🔽 Decrement stock for ordered products
+    try {
+      const stockOps = buildStockOps(list_items);
+      if (stockOps.length) await ProductModel.bulkWrite(stockOps, { ordered: false });
+    } catch (stockErr) {
+      console.error("Failed to update product stock:", stockErr.message);
+    }
 
     ///remove from the cart
     const removeCartItems = await CartProductModel.deleteMany({
@@ -143,6 +161,26 @@ const getOrderProductItems = async ({
       };
 
       productList.push(paylod);
+    }
+
+    // After iterating, reduce stock in DB
+    try {
+      const stockOps = [];
+      for (const li of lineItems.data) {
+        const prod = await Stripe.products.retrieve(li.price.product);
+        if (prod?.metadata?.productId) {
+          stockOps.push({
+            updateOne: {
+              filter: { _id: prod.metadata.productId },
+              update: { $inc: { stock: -li.quantity || -1 } },
+            },
+          });
+        }
+      }
+
+      if (stockOps.length) await ProductModel.bulkWrite(stockOps, { ordered: false });
+    } catch (e) {
+      console.error("[Stripe] Failed to update stock:", e.message);
     }
   }
 

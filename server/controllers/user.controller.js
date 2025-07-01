@@ -9,7 +9,6 @@ const generatedOtp = require("../utils/generatedOTP.js");
 const forgotPasswordTemplate = require("../utils/forgotPasswordTemplate.js");
 const jwt = require("jsonwebtoken");
 const mailSender = require("../config/sendEmail.js");
-const generatedRefreshToken = require("../utils/generatedRefreshToken.js");
 
 const registerUserController = async (request, response) => {
   try {
@@ -237,7 +236,7 @@ const loginController = async (request, response) => {
     }
 
     const accesstoken = await generatedAccessToken(user._id);
-    const refreshToken = await generatedRefreshToken(user._id);
+    const refreshToken = await genertedRefreshToken(user._id);
 
     await UserModel.findByIdAndUpdate(user._id, {
       last_login_date: new Date(),

@@ -1,4 +1,5 @@
-export const baseURL = import.meta.env.VITE_API_URL;
+// If VITE_API_URL is not set (local dev), fall back to backend default localhost port.
+export const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const SummaryApi = {
   register: {

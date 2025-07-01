@@ -12,8 +12,8 @@ import { setUserDetails } from "../store/userSlice";
 
 const Login = () => {
   const [data, setData] = useState({
-    email: "dummyuser12@gmail.com" || "",
-    password: "123456789" || "",
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();

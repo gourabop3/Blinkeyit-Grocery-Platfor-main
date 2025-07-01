@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import Axios from "../utils/Axios";
 import SummaryApi from "../common/SummaryApi";
 
@@ -16,7 +17,7 @@ const VerifyEmail = () => {
         if (response.data.success) {
           toast.success("Email Verified Successfully!");
         } else {
-          toast.error("Verification failed" || response.data.message);
+          toast.error(response.data.message || "Verification failed");
         }
       } catch (error) {
         toast.error("Verification failed");

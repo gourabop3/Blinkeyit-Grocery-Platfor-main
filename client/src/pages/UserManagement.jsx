@@ -11,7 +11,7 @@ import {
   FiCalendar,
   FiUser,
 } from "react-icons/fi";
-import { MdAdmin, MdVerified } from "react-icons/md";
+import { MdVerified, MdAdminPanelSettings } from "react-icons/md";
 import Axios from "../utils/Axios";
 import SummaryApi from "../common/SummaryApi";
 import AxiosToastError from "../utils/AxiosToastError";
@@ -440,7 +440,7 @@ const UserManagement = () => {
                         user.role
                       )}`}
                     >
-                      {user.role === "ADMIN" && <MdAdmin className="mr-1" />}
+                                             {user.role === "ADMIN" && <MdAdminPanelSettings className="mr-1" />}
                       {user.role}
                     </span>
                   </td>

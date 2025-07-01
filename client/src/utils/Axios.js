@@ -26,14 +26,14 @@ Axios.interceptors.request.use(
 Axios.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // If we receive a 401 Unauthorized, try to refresh the access token
+    if (!error.response) {
+      // Network / CORS error or request was cancelled
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry
-    ) {
+    if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       const refreshToken = sessionStorage.getItem("refreshToken");

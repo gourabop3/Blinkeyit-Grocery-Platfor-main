@@ -42,19 +42,19 @@ const UserMenu = ({ close }) => {
     }
   };
   return (
-    <div>
-      <div className="font-semibold">My Account</div>
-      <div className="text-sm flex items-center gap-2">
+    <div className="text-gray-800">
+      <div className="font-semibold text-gray-900">My Account</div>
+      <div className="text-sm flex items-center gap-2 text-gray-700">
         <span className="max-w-52 text-ellipsis line-clamp-1">
           {user.name || user.mobile}{" "}
-          <span className="text-medium text-red-600">
+          <span className="text-medium text-red-600 font-medium">
             {user.role === "ADMIN" ? "(Admin)" : ""}
           </span>
         </span>
         <Link
           onClick={handleClose}
           to={"/dashboard/profile"}
-          className="hover:text-primary-200"
+          className="hover:text-blue-600 text-gray-600"
         >
           <HiOutlineExternalLink size={15} />
         </Link>
@@ -67,7 +67,7 @@ const UserMenu = ({ close }) => {
           <Link
             onClick={handleClose}
             to={"/dashboard/admin"}
-            className="px-2 hover:bg-orange-200 py-1"
+            className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
           >
             Admin Dashboard
           </Link>
@@ -77,7 +77,7 @@ const UserMenu = ({ close }) => {
           <Link
             onClick={handleClose}
             to={"/dashboard/orders"}
-            className="px-2 hover:bg-orange-200 py-1"
+            className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
           >
             Order Management
           </Link>
@@ -87,7 +87,7 @@ const UserMenu = ({ close }) => {
           <Link
             onClick={handleClose}
             to={"/dashboard/category"}
-            className="px-2 hover:bg-orange-200 py-1"
+            className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
           >
             Category
           </Link>
@@ -97,7 +97,7 @@ const UserMenu = ({ close }) => {
           <Link
             onClick={handleClose}
             to={"/dashboard/subcategory"}
-            className="px-2 hover:bg-orange-200 py-1"
+            className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
           >
             Sub Category
           </Link>
@@ -107,7 +107,7 @@ const UserMenu = ({ close }) => {
           <Link
             onClick={handleClose}
             to={"/dashboard/upload-product"}
-            className="px-2 hover:bg-orange-200 py-1"
+            className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
           >
             Upload Product
           </Link>
@@ -117,7 +117,7 @@ const UserMenu = ({ close }) => {
           <Link
             onClick={handleClose}
             to={"/dashboard/product"}
-            className="px-2 hover:bg-orange-200 py-1"
+            className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
           >
             Product
           </Link>
@@ -126,7 +126,7 @@ const UserMenu = ({ close }) => {
         <Link
           onClick={handleClose}
           to={"/dashboard/myorders"}
-          className="px-2 hover:bg-orange-200 py-1"
+          className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
         >
           My Orders
         </Link>
@@ -134,14 +134,14 @@ const UserMenu = ({ close }) => {
         <Link
           onClick={handleClose}
           to={"/dashboard/address"}
-          className="px-2 hover:bg-orange-200 py-1"
+          className="px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
         >
           Save Address
         </Link>
 
         <button
           onClick={handleLogout}
-          className="text-left px-2 hover:bg-orange-200 py-1"
+          className="text-left px-2 hover:bg-orange-200 py-1 text-gray-700 hover:text-gray-900 rounded transition-colors"
         >
           Log Out
         </button>

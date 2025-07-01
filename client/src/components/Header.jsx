@@ -90,7 +90,7 @@ const Header = () => {
           <div className="">
             {/**user icons display in only mobile version**/}
             <button
-              className="text-neutral-600 lg:hidden flex items-center"
+              className="text-gray-700 lg:hidden flex items-center"
               onClick={handleMobileUser}
             >
               {/* <FaRegCircleUser size={26} /> */}
@@ -131,7 +131,7 @@ const Header = () => {
                     ) : (
                       <FaRegCircleUser size={26} />
                     )}
-                    <span className="text-sm font-medium">Account</span>
+                    <span className="text-sm font-medium text-gray-700">Account</span>
                     {openUserMenu ? (
                       <GoTriangleUp size={20} />
                     ) : (
@@ -139,15 +139,15 @@ const Header = () => {
                     )}
                   </div>
                   {openUserMenu && (
-                    <div className="absolute right-0 top-12">
-                      <div className="bg-white rounded p-4 min-w-52 lg:shadow-lg">
+                    <div className="absolute right-0 top-12 z-50">
+                      <div className="bg-white rounded-lg p-4 min-w-52 lg:shadow-lg border border-gray-200">
                         <UserMenu close={handleCloseUserMenu} />
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <button onClick={redirectToLoginPage} className="text-lg px-2">
+                <button onClick={redirectToLoginPage} className="text-lg px-2 text-gray-700 hover:text-gray-900 font-medium">
                   Login
                 </button>
               )}

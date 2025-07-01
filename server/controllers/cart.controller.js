@@ -83,9 +83,20 @@ const updateCartItemQtyController = async (request, response) => {
     const userId = request.userId;
     const { _id, qty } = request.body;
 
-    if (!_id || !qty) {
+    if (!_id || qty === undefined) {
       return response.status(400).json({
-        message: "provide _id, qty",
+        message: "Provide _id and qty",
+        error: true,
+        success: false,
+      });
+    }
+
+    const numericQty = parseInt(qty);
+    if (isNaN(numericQty) || numericQty < 1) {
+      return response.status(400).json({
+        message: "Quantity must be a positive integer",
+        error: true,
+        success: false,
       });
     }
 
@@ -95,7 +106,7 @@ const updateCartItemQtyController = async (request, response) => {
         userId: userId,
       },
       {
-        quantity: qty,
+        quantity: numericQty,
       }
     );
 

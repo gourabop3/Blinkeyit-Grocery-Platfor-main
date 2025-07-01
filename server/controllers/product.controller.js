@@ -378,12 +378,28 @@ const searchProduct = async (request, response) => {
   try {
     let { search, page, limit } = request.body;
 
+    // Basic validation
+    if (!search || typeof search !== "string" || !search.trim()) {
+      return response.status(400).json({
+        message: "Provide non-empty search text",
+        error: true,
+        success: false,
+      });
+    }
+
+    // Sanitize whitespace
+    search = search.trim();
+
     if (!page) {
       page = 1;
     }
+
     if (!limit) {
       limit = 10;
     }
+
+    page = Math.max(Number(page) || 1, 1);
+    limit = Math.min(Math.max(Number(limit) || 10, 1), 50); // cap limit
 
     const query = search
       ? {

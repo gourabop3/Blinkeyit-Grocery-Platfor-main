@@ -14,8 +14,8 @@ const SearchPage = () => {
   const loadingArrayCard = new Array(10).fill(null)
   const [page,setPage] = useState(1)
   const [totalPage,setTotalPage] = useState(1)
-  const params = useLocation()
-  const searchText = params?.search?.slice(3)
+  const location = useLocation();
+  const searchText = new URLSearchParams(location.search).get("q") || "";
 
   const fetchData = async() => {
     try {
@@ -51,9 +51,16 @@ const SearchPage = () => {
     }
   }
 
-  useEffect(()=>{
-    fetchData()
-  },[page,searchText])
+  useEffect(() => {
+    // Reset when new search term arrives
+    setPage(1);
+    setData([]);
+    fetchData();
+  }, [searchText]);
+
+  useEffect(() => {
+    if (page !== 1) fetchData();
+  }, [page]);
 
   console.log("page",page)
 

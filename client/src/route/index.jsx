@@ -17,6 +17,9 @@ import SubCategoryPage from "../pages/SubCategoryPage";
 import UploadProduct from "../pages/UploadProduct";
 import ProductAdmin from "../pages/ProductAdmin";
 import AdminPermision from "../layouts/AdminPermision";
+import AdminDashboard from "../pages/AdminDashboard";
+import OrderManagement from "../pages/OrderManagement";
+import UserManagement from "../pages/UserManagement";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -81,6 +84,30 @@ const router = createBrowserRouter([
           {
             path: "address",
             element: <Address />,
+          },
+          {
+            path: "admin",
+            element: (
+              <AdminPermision>
+                <AdminDashboard />
+              </AdminPermision>
+            ),
+          },
+          {
+            path: "orders",
+            element: (
+              <AdminPermision>
+                <OrderManagement />
+              </AdminPermision>
+            ),
+          },
+          {
+            path: "users",
+            element: (
+              <AdminPermision>
+                <UserManagement />
+              </AdminPermision>
+            ),
           },
           {
             path: "category",

@@ -14,6 +14,7 @@ const productRouter = require("./routes/product.route");
 const cartRouter = require("./routes/cart.route");
 const addressRouter = require("./routes/address.route");
 const orderRouter = require("./routes/order.route");
+const dashboardRouter = require("./routes/dashboard.route");
 
 const PORT = process.env.PORT || 5000;
 
@@ -65,3 +66,4 @@ app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
+app.use("/api/dashboard", dashboardRouter);

@@ -7,6 +7,7 @@ import {
   FiDollarSign,
   FiTrendingUp,
   FiActivity,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { MdPendingActions, MdLocalShipping, MdDone } from "react-icons/md";
 import { AiOutlineShoppingCart } from "react-icons/ai";
@@ -27,42 +28,20 @@ const AdminDashboard = () => {
     recentOrders: [],
   });
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // This would be implemented in the backend
-      // For now, using mock data
-      setTimeout(() => {
-        setDashboardData({
-          totalUsers: 1245,
-          totalProducts: 567,
-          totalOrders: 892,
-          totalRevenue: 45670,
-          pendingOrders: 23,
-          shippedOrders: 45,
-          deliveredOrders: 824,
-          recentOrders: [
-            {
-              _id: "1",
-              orderId: "ORD001",
-              customerName: "John Doe",
-              totalAmt: 299,
-              order_status: "Processing",
-              createdAt: new Date().toISOString(),
-            },
-            {
-              _id: "2",
-              orderId: "ORD002",
-              customerName: "Jane Smith",
-              totalAmt: 599,
-              order_status: "Shipped",
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        });
-        setLoading(false);
-      }, 1000);
+      const response = await Axios({
+        ...SummaryApi.getDashboardStats
+      });
+
+      if (response.data.success) {
+        setDashboardData(response.data.data);
+        setLastUpdated(new Date());
+      }
+      setLoading(false);
     } catch (error) {
       AxiosToastError(error);
       setLoading(false);
@@ -71,6 +50,14 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up auto-refresh every 30 seconds for real-time data
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   const StatCard = ({ icon: Icon, title, value, color, bgColor }) => (
@@ -111,8 +98,25 @@ const AdminDashboard = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's what's happening.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600">Welcome back! Here's what's happening.</p>
+            {lastUpdated && (
+              <p className="text-sm text-gray-500 mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={fetchDashboardData}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Statistics Grid */}

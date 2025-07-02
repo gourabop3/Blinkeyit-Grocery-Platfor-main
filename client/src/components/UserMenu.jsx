@@ -74,45 +74,7 @@ const UserMenu = ({ close }) => {
               Admin Dashboard
             </Link>
             
-            <Link
-              onClick={handleClose}
-              to={"/dashboard/admin/orders"}
-              className="px-2 hover:bg-orange-200 py-1"
-            >
-              Order Management
-            </Link>
-
-            <Link
-              onClick={handleClose}
-              to={"/dashboard/admin/category"}
-              className="px-2 hover:bg-orange-200 py-1"
-            >
-              Category
-            </Link>
-
-            <Link
-              onClick={handleClose}
-              to={"/dashboard/admin/subcategory"}
-              className="px-2 hover:bg-orange-200 py-1"
-            >
-              Sub Category
-            </Link>
-
-            <Link
-              onClick={handleClose}
-              to={"/dashboard/admin/upload-product"}
-              className="px-2 hover:bg-orange-200 py-1"
-            >
-              Upload Product
-            </Link>
-
-            <Link
-              onClick={handleClose}
-              to={"/dashboard/admin/product"}
-              className="px-2 hover:bg-orange-200 py-1"
-            >
-              Product
-            </Link>
+         
 
             <button
               onClick={handleLogout}

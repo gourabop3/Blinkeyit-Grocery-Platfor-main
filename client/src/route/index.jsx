@@ -18,7 +18,6 @@ import UploadProduct from "../pages/UploadProduct";
 import ProductAdmin from "../pages/ProductAdmin";
 import AdminPermision from "../layouts/AdminPermision";
 import AdminLayout from "../layouts/AdminLayout";
-import AdminDashboard from "../pages/AdminDashboard";
 import NewAdminDashboard from "../pages/NewAdminDashboard";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";

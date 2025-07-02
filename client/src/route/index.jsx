@@ -17,7 +17,9 @@ import SubCategoryPage from "../pages/SubCategoryPage";
 import UploadProduct from "../pages/UploadProduct";
 import ProductAdmin from "../pages/ProductAdmin";
 import AdminPermision from "../layouts/AdminPermision";
+import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../pages/AdminDashboard";
+import NewAdminDashboard from "../pages/NewAdminDashboard";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import ProductListPage from "../pages/ProductListPage";
@@ -89,57 +91,55 @@ const router = createBrowserRouter([
             path: "admin",
             element: (
               <AdminPermision>
-                <AdminDashboard />
+                <AdminLayout />
               </AdminPermision>
             ),
-          },
-          {
-            path: "orders",
-            element: (
-              <AdminPermision>
-                <OrderManagement />
-              </AdminPermision>
-            ),
-          },
-          {
-            path: "users",
-            element: (
-              <AdminPermision>
-                <UserManagement />
-              </AdminPermision>
-            ),
-          },
-          {
-            path: "category",
-            element: (
-              <AdminPermision>
-                <CategoryPage />
-              </AdminPermision>
-            ),
-          },
-          {
-            path: "subcategory",
-            element: (
-              <AdminPermision>
-                <SubCategoryPage />
-              </AdminPermision>
-            ),
-          },
-          {
-            path: "upload-product",
-            element: (
-              <AdminPermision>
-                <UploadProduct />
-              </AdminPermision>
-            ),
-          },
-          {
-            path: "product",
-            element: (
-              <AdminPermision>
-                <ProductAdmin />
-              </AdminPermision>
-            ),
+            children: [
+              {
+                path: "",
+                element: <NewAdminDashboard />,
+              },
+              {
+                path: "orders",
+                element: <OrderManagement />,
+              },
+              {
+                path: "users",
+                element: <UserManagement />,
+              },
+              {
+                path: "category",
+                element: <CategoryPage />,
+              },
+              {
+                path: "subcategory",
+                element: <SubCategoryPage />,
+              },
+              {
+                path: "upload-product",
+                element: <UploadProduct />,
+              },
+              {
+                path: "product",
+                element: <ProductAdmin />,
+              },
+              {
+                path: "coupons",
+                element: <div className="p-6"><h1 className="text-2xl font-bold">Coupon Management</h1><p className="text-gray-600">Coming soon...</p></div>,
+              },
+              {
+                path: "analytics",
+                element: <div className="p-6"><h1 className="text-2xl font-bold">Analytics</h1><p className="text-gray-600">Coming soon...</p></div>,
+              },
+              {
+                path: "website-banners",
+                element: <div className="p-6"><h1 className="text-2xl font-bold">Website Banners</h1><p className="text-gray-600">Coming soon...</p></div>,
+              },
+              {
+                path: "app-banners",
+                element: <div className="p-6"><h1 className="text-2xl font-bold">App Banners</h1><p className="text-gray-600">Coming soon...</p></div>,
+              },
+            ],
           },
         ],
       },

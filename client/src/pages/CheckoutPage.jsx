@@ -107,27 +107,31 @@ const CheckoutPage = () => {
           toast.dismiss() // Remove loading toast
           toast.success("Redirecting to payment...")
           
+          // Store cart clearing flag in sessionStorage for Success page
+          sessionStorage.setItem('pendingCartClear', 'true');
+          
           const result = await stripePromise.redirectToCheckout({ 
             sessionId: responseData.id 
           })
           
           if (result.error) {
             toast.error(result.error.message)
+            // Remove the flag if redirect failed
+            sessionStorage.removeItem('pendingCartClear');
           }
         } else {
           toast.error("Failed to create payment session")
         }
         
-        if(fetchCartItem){
-          fetchCartItem()
-        }
-        if(fetchOrder){
-          fetchOrder()
-        }
+        // Note: Do NOT clear cart here - only clear after successful payment
+        // Cart will be cleared on Success page after confirmed payment
+        
     } catch (error) {
         toast.dismiss() // Remove any loading toasts
         console.error("Payment Error:", error)
         AxiosToastError(error)
+        // Remove the flag if payment failed
+        sessionStorage.removeItem('pendingCartClear');
     } finally {
       setIsProcessingPayment(false)
     }

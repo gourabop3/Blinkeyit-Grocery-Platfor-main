@@ -21,6 +21,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import NewAdminDashboard from "../pages/NewAdminDashboard";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
+import AdminDiagnostic from "../pages/AdminDiagnostic";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -69,6 +70,10 @@ const router = createBrowserRouter([
       {
         path: "verify-email",
         element: <VerifyEmail />,
+      },
+      {
+        path: "admin-diagnostic",
+        element: <AdminDiagnostic />,
       },
       {
         path: "dashboard",

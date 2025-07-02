@@ -21,43 +21,62 @@ const PORT = process.env.PORT || 5000;
 const connectDB = require("./config/mongoDB");
 connectDB();
 
-// app.use(cors());
+// CORS Configuration - Handle multiple origins for development and production
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173', 
+  'http://localhost:4173',
+  'https://grocery-frontend-e2hz.onrender.com',
+  process.env.FRONTEND_URL
+].filter(Boolean); // Remove any undefined values
 
 app.use(
   cors({
     credentials: true,
-    // In production, set FRONTEND_URL env. In dev, fallback to localhost origin
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log('CORS blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
+    exposedHeaders: ['set-cookie']
   })
 );
 
-// app.use(
-//   cors({
-//     credentials: true,
-//     origin: "http://localhost:5173" || process.env.FRONTEND_URL,
-//   })
-// );
-
-app.use(express.json());
-app.use(cookieParser());
-app.use(morgan());
+// Security middleware with updated configuration
 app.use(
   helmet({
-    crossOriginResourcePolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
   })
 );
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
+// Logging middleware
+app.use(morgan('combined'));
+
+// Health check endpoint
 app.get("/", (req, res) => {
-  // res.send("Blinkeyit Grocery Backend is running ✅", PORT);
   res.json({
-    message: "Blinkeyit Grocery Backend is running ✅ : " + PORT,
+    message: "Blinkeyit Grocery Backend is running ✅",
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
   });
 });
 
+// API Routes
 app.use("/api/user", userRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/file", uploadRouter);
@@ -67,3 +86,26 @@ app.use("/api/cart", cartRouter);
 app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/dashboard", dashboardRouter);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err);
+  res.status(500).json({
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    message: 'Route not found',
+    path: req.originalUrl
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+});

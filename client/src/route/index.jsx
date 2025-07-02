@@ -19,6 +19,7 @@ import ProductAdmin from "../pages/ProductAdmin";
 import AdminPermision from "../layouts/AdminPermision";
 import AdminLayout from "../layouts/AdminLayout";
 import NewAdminDashboard from "../pages/NewAdminDashboard";
+import AdminTest from "../pages/AdminTest";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import ProductListPage from "../pages/ProductListPage";
@@ -90,7 +91,7 @@ const router = createBrowserRouter([
       },
       {
         path: "admin-test",
-        element: <NewAdminDashboard />,
+        element: <AdminTest />,
       },
       {
         path: "admin",

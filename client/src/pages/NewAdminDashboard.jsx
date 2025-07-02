@@ -397,7 +397,7 @@ const NewAdminDashboard = () => {
               <p className="text-sm text-slate-600 mt-1">Latest customer orders and transactions</p>
             </div>
             <Link
-              to="/dashboard/admin/orders"
+              to="/admin/orders"
               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl group"
             >
               View All

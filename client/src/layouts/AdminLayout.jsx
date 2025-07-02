@@ -36,7 +36,7 @@ const AdminLayout = () => {
   const navigation = [
     {
       name: "Dashboard",
-      href: "/dashboard/admin",
+      href: "/admin",
       icon: FiHome,
       badge: null,
     },
@@ -48,61 +48,61 @@ const AdminLayout = () => {
     },
     {
       name: "All Orders",
-      href: "/dashboard/admin/orders",
+      href: "/admin/orders",
       icon: FiShoppingBag,
       badge: "New",
     },
     {
       name: "Customers",
-      href: "/dashboard/admin/users",
+      href: "/admin/users",
       icon: FiUsers,
       badge: null,
     },
     {
       name: "All Products",
-      href: "/dashboard/admin/product",
+      href: "/admin/product",
       icon: FiPackage,
       badge: null,
     },
     {
       name: "Create Product",
-      href: "/dashboard/admin/upload-product",
+      href: "/admin/upload-product",
       icon: FiPlus,
       badge: null,
     },
     {
       name: "Categories",
-      href: "/dashboard/admin/category",
+      href: "/admin/category",
       icon: FiGrid,
       badge: null,
     },
     {
       name: "Sub-Categories",
-      href: "/dashboard/admin/subcategory",
+      href: "/admin/subcategory",
       icon: FiLayers,
       badge: null,
     },
     {
       name: "Coupons",
-      href: "/dashboard/admin/coupons",
+      href: "/admin/coupons",
       icon: MdDiscount,
       badge: null,
     },
     {
       name: "Analytics",
-      href: "/dashboard/admin/analytics",
+      href: "/admin/analytics",
       icon: FiBarChart2,
       badge: "Pro",
     },
     {
       name: "Website Banners",
-      href: "/dashboard/admin/website-banners",
+      href: "/admin/website-banners",
       icon: FiImage,
       badge: null,
     },
     {
       name: "App Banners",
-      href: "/dashboard/admin/app-banners",
+      href: "/admin/app-banners",
       icon: FiSmartphone,
       badge: null,
     },
@@ -151,7 +151,7 @@ const AdminLayout = () => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
-            <Link to="/dashboard/admin" className="flex items-center space-x-3 group">
+            <Link to="/admin" className="flex items-center space-x-3 group">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200">
                 <FiHome className="w-5 h-5" />
               </div>

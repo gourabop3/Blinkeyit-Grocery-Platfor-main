@@ -66,7 +66,7 @@ const UserMenu = ({ close }) => {
         {isAdmin(user.role) && (
           <Link
             onClick={handleClose}
-            to={"/dashboard/admin"}
+            to={"/admin"}
             className="px-2 hover:bg-orange-200 py-1"
           >
             Admin Dashboard
@@ -76,7 +76,7 @@ const UserMenu = ({ close }) => {
         {isAdmin(user.role) && (
           <Link
             onClick={handleClose}
-            to={"/dashboard/orders"}
+            to={"/admin/orders"}
             className="px-2 hover:bg-orange-200 py-1"
           >
             Order Management
@@ -86,7 +86,7 @@ const UserMenu = ({ close }) => {
         {isAdmin(user.role) && (
           <Link
             onClick={handleClose}
-            to={"/dashboard/category"}
+            to={"/admin/category"}
             className="px-2 hover:bg-orange-200 py-1"
           >
             Category
@@ -96,7 +96,7 @@ const UserMenu = ({ close }) => {
         {isAdmin(user.role) && (
           <Link
             onClick={handleClose}
-            to={"/dashboard/subcategory"}
+            to={"/admin/subcategory"}
             className="px-2 hover:bg-orange-200 py-1"
           >
             Sub Category
@@ -106,7 +106,7 @@ const UserMenu = ({ close }) => {
         {isAdmin(user.role) && (
           <Link
             onClick={handleClose}
-            to={"/dashboard/upload-product"}
+            to={"/admin/upload-product"}
             className="px-2 hover:bg-orange-200 py-1"
           >
             Upload Product
@@ -116,7 +116,7 @@ const UserMenu = ({ close }) => {
         {isAdmin(user.role) && (
           <Link
             onClick={handleClose}
-            to={"/dashboard/product"}
+            to={"/admin/product"}
             className="px-2 hover:bg-orange-200 py-1"
           >
             Product

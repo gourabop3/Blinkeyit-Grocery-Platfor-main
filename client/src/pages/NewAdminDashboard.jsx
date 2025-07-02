@@ -6,6 +6,7 @@ import {
   FiDollarSign,
   FiTrendingUp,
   FiRefreshCw,
+  FiUsers,
 } from "react-icons/fi";
 import Axios from "../utils/Axios";
 import SummaryApi from "../common/SummaryApi";
@@ -14,98 +15,56 @@ import Loading from "../components/Loading";
 
 const NewAdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
-    totalUsers: 1247,
-    totalProducts: 423,
-    totalOrders: 1829,
-    totalRevenue: 125000,
-    totalSales: 2847,
-    pendingOrders: 45,
-    shippedOrders: 123,
-    deliveredOrders: 1661,
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    shippedOrders: 0,
+    deliveredOrders: 0,
     recentOrders: [],
-    topProducts: [],
-    recentCustomers: [],
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-
-  // Sample data for demonstration
-  const sampleRecentOrders = [
-    {
-      _id: "1",
-      orderId: "ORD-2024-001",
-      customerName: "John Doe",
-      totalAmt: 299.99,
-      order_status: "Processing",
-      createdAt: new Date(),
-    },
-    {
-      _id: "2",
-      orderId: "ORD-2024-002",
-      customerName: "Jane Smith",
-      totalAmt: 149.50,
-      order_status: "Shipped",
-      createdAt: new Date(),
-    },
-    {
-      _id: "3",
-      orderId: "ORD-2024-003",
-      customerName: "Mike Johnson",
-      totalAmt: 89.99,
-      order_status: "Delivered",
-      createdAt: new Date(),
-    },
-    {
-      _id: "4",
-      orderId: "ORD-2024-004",
-      customerName: "Sarah Wilson",
-      totalAmt: 199.00,
-      order_status: "Processing",
-      createdAt: new Date(),
-    },
-  ];
-
-  const sampleTopProducts = [
-    { id: 1, name: "Wireless Bluetooth Headphones", sales: 234, revenue: 23400 },
-    { id: 2, name: "Smart Watch Series 5", sales: 189, revenue: 37800 },
-    { id: 3, name: "USB-C Fast Charger", sales: 345, revenue: 10350 },
-    { id: 4, name: "Portable Power Bank", sales: 156, revenue: 7800 },
-  ];
-
-  const sampleRecentCustomers = [
-    { id: 1, name: "Alex Thompson", email: "alex@example.com", orders: 5, spent: 899.99 },
-    { id: 2, name: "Emma Davis", email: "emma@example.com", orders: 3, spent: 449.99 },
-    { id: 3, name: "Ryan Brown", email: "ryan@example.com", orders: 8, spent: 1299.99 },
-    { id: 4, name: "Lisa Garcia", email: "lisa@example.com", orders: 2, spent: 199.99 },
-  ];
+  const [error, setError] = useState(null);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log("Fetching dashboard data...");
+      
       const response = await Axios({
         ...SummaryApi.getDashboardStats
       });
 
+      console.log("Dashboard API response:", response.data);
+
       if (response.data.success) {
-        setDashboardData(prev => ({
-          ...prev,
-          ...response.data.data,
-          recentOrders: response.data.data.recentOrders || sampleRecentOrders,
-          topProducts: response.data.data.topProducts || sampleTopProducts,
-          recentCustomers: response.data.data.recentCustomers || sampleRecentCustomers,
-        }));
+        setDashboardData(response.data.data);
         setLastUpdated(new Date());
+        console.log("Dashboard data updated successfully");
+      } else {
+        throw new Error(response.data.message || "Failed to fetch dashboard data");
       }
-      setLoading(false);
     } catch (error) {
+      console.error("Dashboard API Error:", error);
+      setError(error.response?.data?.message || error.message || "Failed to load dashboard data");
       AxiosToastError(error);
-      // Use sample data if API fails
-      setDashboardData(prev => ({
-        ...prev,
-        recentOrders: sampleRecentOrders,
-        topProducts: sampleTopProducts,
-        recentCustomers: sampleRecentCustomers,
-      }));
+      
+      // Set default values on error
+      setDashboardData({
+        totalUsers: 0,
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+        shippedOrders: 0,
+        deliveredOrders: 0,
+        recentOrders: [],
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -137,7 +96,7 @@ const NewAdminDashboard = () => {
     </div>
   );
 
-  if (loading && dashboardData.recentOrders.length === 0) {
+  if (loading && !lastUpdated) {
     return <Loading />;
   }
 
@@ -145,7 +104,7 @@ const NewAdminDashboard = () => {
     <div className="space-y-6">
       {/* Dashboard Overview Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
         <button
           onClick={fetchDashboardData}
           disabled={loading}
@@ -156,15 +115,24 @@ const NewAdminDashboard = () => {
         </button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm">
+            <strong>Error:</strong> {error}
+          </p>
+        </div>
+      )}
+
       {/* Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          icon={FiShoppingCart}
-          title="Total Orders"
-          value={dashboardData.totalOrders.toLocaleString()}
-          color="text-blue-600"
+          icon={FiUsers}
+          title="Total Users"
+          value={dashboardData.totalUsers.toLocaleString()}
+          color="text-purple-600"
           bgColor="bg-white"
-          iconBg="bg-blue-100"
+          iconBg="bg-purple-100"
         />
         <StatCard
           icon={FiPackage}
@@ -175,20 +143,48 @@ const NewAdminDashboard = () => {
           iconBg="bg-green-100"
         />
         <StatCard
-          icon={FiDollarSign}
-          title="Total Revenue"
-          value={`$${dashboardData.totalRevenue.toLocaleString()}.00`}
-          color="text-purple-600"
+          icon={FiShoppingCart}
+          title="Total Orders"
+          value={dashboardData.totalOrders.toLocaleString()}
+          color="text-blue-600"
           bgColor="bg-white"
-          iconBg="bg-purple-100"
+          iconBg="bg-blue-100"
         />
         <StatCard
-          icon={FiTrendingUp}
-          title="Total Sales"
-          value={dashboardData.totalSales.toLocaleString()}
+          icon={FiDollarSign}
+          title="Total Revenue"
+          value={`$${(dashboardData.totalRevenue || 0).toLocaleString()}`}
           color="text-orange-600"
           bgColor="bg-white"
           iconBg="bg-orange-100"
+        />
+      </div>
+
+      {/* Order Status Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          icon={FiShoppingCart}
+          title="Pending Orders"
+          value={dashboardData.pendingOrders.toLocaleString()}
+          color="text-yellow-600"
+          bgColor="bg-yellow-50"
+          iconBg="bg-yellow-100"
+        />
+        <StatCard
+          icon={FiTrendingUp}
+          title="Shipped Orders"
+          value={dashboardData.shippedOrders.toLocaleString()}
+          color="text-blue-600"
+          bgColor="bg-blue-50"
+          iconBg="bg-blue-100"
+        />
+        <StatCard
+          icon={FiPackage}
+          title="Delivered Orders"
+          value={dashboardData.deliveredOrders.toLocaleString()}
+          color="text-green-600"
+          bgColor="bg-green-50"
+          iconBg="bg-green-100"
         />
       </div>
 
@@ -221,6 +217,9 @@ const NewAdminDashboard = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -229,11 +228,11 @@ const NewAdminDashboard = () => {
                   <tr key={order._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.customerName}
+                        {order.customerName || "Unknown Customer"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.orderId}</div>
+                      <div className="text-sm text-gray-900">{order.orderId || order._id}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -247,92 +246,30 @@ const NewAdminDashboard = () => {
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {order.order_status}
+                        {order.order_status || "Unknown"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ${order.totalAmt}
+                        ${(order.totalAmt || 0).toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                    No recent orders
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    {error ? "Unable to load orders" : "No recent orders"}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* Bottom Grid - Top Products and Recent Customers */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Products */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">Top Products</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {dashboardData.topProducts.length > 0 ? (
-                dashboardData.topProducts.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 truncate max-w-48">
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {product.sales} sales
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">
-                        ${product.revenue}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-4">No product data</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Customers */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Customers</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {dashboardData.recentCustomers.length > 0 ? (
-                dashboardData.recentCustomers.map((customer) => (
-                  <div key={customer.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {customer.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {customer.orders} orders
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">
-                        ${customer.spent}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-4">No customer data</p>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 

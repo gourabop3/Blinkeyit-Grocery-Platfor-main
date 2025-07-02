@@ -16,7 +16,7 @@ import {
   FiBell,
   FiSearch,
   FiSettings,
-  FiBarChart3,
+  FiBarChart,
   FiTrendingUp,
 } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi2";
@@ -43,7 +43,7 @@ const ModernAdminLayout = () => {
     {
       name: "Analytics",
       href: "/admin/analytics",
-      icon: FiBarChart3,
+      icon: FiBarChart,
       badge: "New",
     },
     {

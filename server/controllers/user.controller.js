@@ -633,11 +633,172 @@ const userDetails = async (request, response) => {
   }
 };
 
+//get all users for admin (with pagination and filtering)
+const getAllUsersController = async (request, response) => {
+  try {
+    const { page = 1, limit = 10, role, status, search } = request.query;
+    
+    // Build filter object
+    const filter = {};
+    
+    if (role && role !== 'all') {
+      filter.role = role.toUpperCase();
+    }
+    
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+    
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { mobile: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const totalUsers = await UserModel.countDocuments(filter);
+    
+    // Get users with pagination
+    const users = await UserModel.find(filter)
+      .select('-password -refresh_token -forgot_password_otp -forgot_password_expiry')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Add order statistics for each user
+    const usersWithStats = await Promise.all(
+      users.map(async (user) => {
+        const orderCount = await UserModel.aggregate([
+          { $match: { _id: user._id } },
+          { $lookup: { from: 'orders', localField: '_id', foreignField: 'userId', as: 'orders' } },
+          { $project: { totalOrders: { $size: '$orders' }, totalSpent: { $sum: '$orders.totalAmt' } } }
+        ]);
+        
+        return {
+          ...user,
+          totalOrders: orderCount[0]?.totalOrders || 0,
+          totalSpent: orderCount[0]?.totalSpent || 0
+        };
+      })
+    );
+    
+    return response.json({
+      message: "Users fetched successfully",
+      error: false,
+      success: true,
+      data: {
+        users: usersWithStats,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalUsers / limit),
+          totalUsers,
+          hasNext: page * limit < totalUsers,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
+//update user role and status for admin
+const updateUserRoleController = async (request, response) => {
+  try {
+    const { userId } = request.params;
+    const { role, status } = request.body;
+    
+    if (!userId) {
+      return response.status(400).json({
+        message: "User ID is required",
+        error: true,
+        success: false,
+      });
+    }
+    
+    const updateData = {};
+    if (role) updateData.role = role;
+    if (status) updateData.status = status;
+    
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    ).select('-password -refresh_token -forgot_password_otp -forgot_password_expiry');
+    
+    if (!updatedUser) {
+      return response.status(404).json({
+        message: "User not found",
+        error: true,
+        success: false,
+      });
+    }
+    
+    return response.json({
+      message: "User updated successfully",
+      error: false,
+      success: true,
+      data: updatedUser
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
+//delete user for admin
+const deleteUserController = async (request, response) => {
+  try {
+    const { userId } = request.params;
+    
+    if (!userId) {
+      return response.status(400).json({
+        message: "User ID is required",
+        error: true,
+        success: false,
+      });
+    }
+    
+    const deletedUser = await UserModel.findByIdAndDelete(userId);
+    
+    if (!deletedUser) {
+      return response.status(404).json({
+        message: "User not found",
+        error: true,
+        success: false,
+      });
+    }
+    
+    return response.json({
+      message: "User deleted successfully",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
 module.exports = {
   registerUserController,
   verifyEmailController,
   loginController,
-  userDetails,
   logoutController,
   uploadAvatar,
   updateUserDetails,
@@ -645,4 +806,8 @@ module.exports = {
   verifyForgotPasswordOtp,
   resetpassword,
   refreshToken,
+  userDetails,
+  getAllUsersController,
+  updateUserRoleController,
+  deleteUserController,
 };

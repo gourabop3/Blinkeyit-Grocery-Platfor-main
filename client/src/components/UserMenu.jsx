@@ -76,7 +76,7 @@ const UserMenu = ({ close }) => {
             
             <Link
               onClick={handleClose}
-              to={"/dashboard/orders"}
+              to={"/dashboard/admin/orders"}
               className="px-2 hover:bg-orange-200 py-1"
             >
               Order Management
@@ -84,7 +84,7 @@ const UserMenu = ({ close }) => {
 
             <Link
               onClick={handleClose}
-              to={"/dashboard/category"}
+              to={"/dashboard/admin/category"}
               className="px-2 hover:bg-orange-200 py-1"
             >
               Category
@@ -92,7 +92,7 @@ const UserMenu = ({ close }) => {
 
             <Link
               onClick={handleClose}
-              to={"/dashboard/subcategory"}
+              to={"/dashboard/admin/subcategory"}
               className="px-2 hover:bg-orange-200 py-1"
             >
               Sub Category
@@ -100,7 +100,7 @@ const UserMenu = ({ close }) => {
 
             <Link
               onClick={handleClose}
-              to={"/dashboard/upload-product"}
+              to={"/dashboard/admin/upload-product"}
               className="px-2 hover:bg-orange-200 py-1"
             >
               Upload Product
@@ -108,7 +108,7 @@ const UserMenu = ({ close }) => {
 
             <Link
               onClick={handleClose}
-              to={"/dashboard/product"}
+              to={"/dashboard/admin/product"}
               className="px-2 hover:bg-orange-200 py-1"
             >
               Product

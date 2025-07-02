@@ -194,7 +194,7 @@ const NewAdminDashboard = () => {
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
             <Link
-              to="/dashboard/orders"
+              to="/dashboard/admin/orders"
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
               View All

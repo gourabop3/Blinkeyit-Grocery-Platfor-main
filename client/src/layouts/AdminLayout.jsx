@@ -33,52 +33,52 @@ const AdminLayout = () => {
     },
     {
       name: "Customers",
-      href: "/dashboard/users",
+      href: "/dashboard/admin/users",
       icon: FiUsers,
     },
     {
       name: "Coupon Management",
-      href: "/dashboard/coupons",
+      href: "/dashboard/admin/coupons",
       icon: MdDiscount,
     },
     {
       name: "All Orders",
-      href: "/dashboard/orders",
+      href: "/dashboard/admin/orders",
       icon: FiShoppingBag,
     },
     {
       name: "All Products",
-      href: "/dashboard/product",
+      href: "/dashboard/admin/product",
       icon: FiPackage,
     },
     {
       name: "Create Product",
-      href: "/dashboard/upload-product",
+      href: "/dashboard/admin/upload-product",
       icon: FiPlus,
     },
     {
       name: "Categories",
-      href: "/dashboard/category",
+      href: "/dashboard/admin/category",
       icon: FiGrid,
     },
     {
       name: "Sub-Categories",
-      href: "/dashboard/subcategory",
+      href: "/dashboard/admin/subcategory",
       icon: FiLayers,
     },
     {
       name: "Analytics",
-      href: "/dashboard/analytics",
+      href: "/dashboard/admin/analytics",
       icon: FiBarChart2,
     },
     {
       name: "Website Banners",
-      href: "/dashboard/website-banners",
+      href: "/dashboard/admin/website-banners",
       icon: FiImage,
     },
     {
       name: "App Banners",
-      href: "/dashboard/app-banners",
+      href: "/dashboard/admin/app-banners",
       icon: FiSmartphone,
     },
   ];

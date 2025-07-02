@@ -72,13 +72,15 @@ const getProductController = async (request, response) => {
       limit = 10;
     }
 
-    const query = search
-      ? {
-          $text: {
-            $search: search,
-          },
-        }
-      : {};
+    // Always include published products filter
+    let query = { publish: true };
+
+    // Add text search if search term provided
+    if (search && search.trim()) {
+      query.$text = {
+        $search: search,
+      };
+    }
 
     const skip = (page - 1) * limit;
 
@@ -151,12 +153,15 @@ const getProductByCategory = async (request, response) => {
       });
     }
 
-    // Ensure `id` is used with $in properly if it's not an array
-    const query = Array.isArray(id) ? { $in: id } : id;
+    // Build query with published filter and category filter
+    const query = {
+      publish: true,
+      category: Array.isArray(id) ? { $in: id } : id,
+    };
 
-    const products = await ProductModel.find({
-      category: query,
-    }).limit(15);
+    const products = await ProductModel.find(query)
+      .limit(15)
+      .populate("category subCategory");
 
     return response.status(200).json({
       message: "Category product list fetched successfully.",
@@ -194,6 +199,7 @@ const getProductByCategoryAndSubCategory = async (request, response) => {
     limit = Number(limit) || 10;
 
     const query = {
+      publish: true,
       category: { $in: categoryId },
       subCategory: { $in: subCategoryId },
     };
@@ -201,7 +207,11 @@ const getProductByCategoryAndSubCategory = async (request, response) => {
     const skip = (page - 1) * limit;
 
     const [data, dataCount] = await Promise.all([
-      ProductModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      ProductModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("category subCategory"),
       ProductModel.countDocuments(query),
     ]);
 
@@ -321,13 +331,15 @@ const searchProduct = async (request, response) => {
       limit = 10;
     }
 
-    const query = search
-      ? {
-          $text: {
-            $search: search,
-          },
-        }
-      : {};
+    // Always include published filter
+    let query = { publish: true };
+
+    // Add search if provided
+    if (search && search.trim()) {
+      query.$text = {
+        $search: search,
+      };
+    }
 
     const skip = (page - 1) * limit;
 

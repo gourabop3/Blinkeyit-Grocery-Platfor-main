@@ -30,37 +30,37 @@ const AdminLayout = () => {
   const navigation = [
     {
       name: "Admin Dashboard",
-      href: "/dashboard/admin",
+      href: "/admin",
       icon: FiHome,
     },
     {
       name: "Order Management",
-      href: "/dashboard/admin/orders",
+      href: "/admin/orders",
       icon: FiShoppingBag,
     },
     {
       name: "User Management",
-      href: "/dashboard/admin/users",
+      href: "/admin/users",
       icon: FiUsers,
     },
     {
       name: "Category",
-      href: "/dashboard/admin/category",
+      href: "/admin/category",
       icon: FiGrid,
     },
     {
       name: "Sub Category",
-      href: "/dashboard/admin/subcategory",
+      href: "/admin/subcategory",
       icon: FiLayers,
     },
     {
       name: "Upload Product",
-      href: "/dashboard/admin/upload-product",
+      href: "/admin/upload-product",
       icon: FiPlus,
     },
     {
       name: "Product Management",
-      href: "/dashboard/admin/product",
+      href: "/admin/product",
       icon: FiPackage,
     },
   ];
@@ -102,7 +102,7 @@ const AdminLayout = () => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <Link to="/dashboard/admin" className="flex items-center space-x-2">
+            <Link to="/admin" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <FiHome className="w-5 h-5" />
               </div>

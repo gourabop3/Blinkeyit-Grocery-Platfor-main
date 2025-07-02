@@ -29,6 +29,7 @@ import CheckoutPage from "../pages/CheckoutPage";
 import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import VerifyEmail from "../pages/VerifyEmail";
+import { Navigate } from "react-router-dom";
 
 const router = createBrowserRouter([
   {
@@ -76,87 +77,6 @@ const router = createBrowserRouter([
         element: <AdminDiagnostic />,
       },
       {
-        path: "dashboard",
-        element: <Dashboard />,
-        children: [
-          {
-            path: "profile",
-            element: <Profile />,
-          },
-          {
-            path: "myorders",
-            element: <MyOrders />,
-          },
-          {
-            path: "address",
-            element: <Address />,
-          },
-          {
-            path: "admin",
-            element: (
-              <AdminPermision>
-                <AdminLayout />
-              </AdminPermision>
-            ),
-            children: [
-              {
-                path: "",
-                element: <NewAdminDashboard />,
-              },
-              {
-                path: "orders",
-                element: <OrderManagement />,
-              },
-              {
-                path: "users",
-                element: <UserManagement />,
-              },
-              {
-                path: "category",
-                element: <CategoryPage />,
-              },
-              {
-                path: "subcategory",
-                element: <SubCategoryPage />,
-              },
-              {
-                path: "upload-product",
-                element: <UploadProduct />,
-              },
-              {
-                path: "product",
-                element: <ProductAdmin />,
-              },
-              {
-                path: "coupons",
-                element: <div className="p-6"><h1 className="text-2xl font-bold">Coupon Management</h1><p className="text-gray-600">Coming soon...</p></div>,
-              },
-              {
-                path: "analytics",
-                element: <div className="p-6"><h1 className="text-2xl font-bold">Analytics</h1><p className="text-gray-600">Coming soon...</p></div>,
-              },
-              {
-                path: "website-banners",
-                element: <div className="p-6"><h1 className="text-2xl font-bold">Website Banners</h1><p className="text-gray-600">Coming soon...</p></div>,
-              },
-              {
-                path: "app-banners",
-                element: <div className="p-6"><h1 className="text-2xl font-bold">App Banners</h1><p className="text-gray-600">Coming soon...</p></div>,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        path: ":category",
-        children: [
-          {
-            path: ":subCategory",
-            element: <ProductListPage />,
-          },
-        ],
-      },
-      {
         path: "product/:product",
         element: <ProductDisplayPage />,
       },
@@ -175,6 +95,79 @@ const router = createBrowserRouter([
       {
         path: "cancel",
         element: <Cancel />,
+      },
+      // Admin Panel - Standalone route outside of dashboard
+      {
+        path: "admin",
+        element: (
+          <AdminPermision>
+            <AdminLayout />
+          </AdminPermision>
+        ),
+        children: [
+          {
+            path: "",
+            element: <NewAdminDashboard />,
+          },
+          {
+            path: "orders",
+            element: <OrderManagement />,
+          },
+          {
+            path: "users",
+            element: <UserManagement />,
+          },
+          {
+            path: "category",
+            element: <CategoryPage />,
+          },
+          {
+            path: "subcategory",
+            element: <SubCategoryPage />,
+          },
+          {
+            path: "upload-product",
+            element: <UploadProduct />,
+          },
+          {
+            path: "product",
+            element: <ProductAdmin />,
+          },
+        ],
+      },
+      // User Dashboard
+      {
+        path: "dashboard",
+        element: <Dashboard />,
+        children: [
+          {
+            path: "profile",
+            element: <Profile />,
+          },
+          {
+            path: "myorders",
+            element: <MyOrders />,
+          },
+          {
+            path: "address",
+            element: <Address />,
+          },
+          // Redirect old admin route to new standalone admin
+          {
+            path: "admin",
+            element: <Navigate to="/admin" replace />,
+          },
+        ],
+      },
+      // Category routes - moved to the end to prevent conflicts with specific routes
+      {
+        path: ":category",
+        children: [
+          {
+            path: ":subCategory",
+            element: <ProductListPage />,
+          },
+        ],
       },
     ],
   },

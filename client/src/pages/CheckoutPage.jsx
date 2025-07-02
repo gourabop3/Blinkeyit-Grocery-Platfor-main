@@ -54,9 +54,33 @@ const CheckoutPage = () => {
 
   const handleOnlinePayment = async()=>{
     try {
-        toast.loading("Loading...")
+        // Validate required data before proceeding
+        if (!addressList[selectAddress]?._id) {
+            toast.error("Please select a delivery address")
+            return
+        }
+
+        if (!cartItemsList || cartItemsList.length === 0) {
+            toast.error("Your cart is empty")
+            return
+        }
+
+        // Check Stripe configuration
         const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY
+        if (!stripePublicKey) {
+            toast.error("Payment system not configured. Please contact support.")
+            return
+        }
+
+        toast.loading("Preparing payment...")
+        
         const stripePromise = await loadStripe(stripePublicKey)
+        
+        if (!stripePromise) {
+            toast.dismiss()
+            toast.error("Failed to initialize payment system")
+            return
+        }
        
         const response = await Axios({
             ...SummaryApi.payment_url,
@@ -70,8 +94,23 @@ const CheckoutPage = () => {
 
         const { data : responseData } = response
 
-        stripePromise.redirectToCheckout({ sessionId : responseData.id })
+        // Dismiss loading toast before redirect
+        toast.dismiss()
+
+        if (!responseData?.id) {
+            toast.error("Failed to create payment session")
+            return
+        }
+
+        // Redirect to Stripe checkout
+        const result = await stripePromise.redirectToCheckout({ sessionId : responseData.id })
         
+        if (result?.error) {
+            toast.error(result.error.message || "Payment failed")
+            return
+        }
+        
+        // These will only run if redirect fails
         if(fetchCartItem){
           fetchCartItem()
         }
@@ -79,6 +118,7 @@ const CheckoutPage = () => {
           fetchOrder()
         }
     } catch (error) {
+        toast.dismiss() // Always dismiss loading toast on error
         AxiosToastError(error)
     }
   }

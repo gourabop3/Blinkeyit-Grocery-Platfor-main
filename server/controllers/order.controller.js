@@ -86,15 +86,71 @@ const paymentController = async (request, response) => {
     const userId = request.userId; // auth middleware
     const { list_items, totalAmt, addressId, subTotalAmt } = request.body;
 
-    const user = await UserModel.findById(userId);
+    // Validate required fields
+    if (!userId) {
+      return response.status(401).json({
+        message: "User authentication required",
+        error: true,
+        success: false,
+      });
+    }
 
-    const line_items = list_items.map((item) => {
+    if (!list_items || !Array.isArray(list_items) || list_items.length === 0) {
+      return response.status(400).json({
+        message: "Cart items are required",
+        error: true,
+        success: false,
+      });
+    }
+
+    if (!addressId) {
+      return response.status(400).json({
+        message: "Delivery address is required",
+        error: true,
+        success: false,
+      });
+    }
+
+    // Check if Stripe is properly configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("❌ STRIPE_SECRET_KEY is missing in .env file");
+      return response.status(500).json({
+        message: "Payment system not configured",
+        error: true,
+        success: false,
+      });
+    }
+
+    if (!process.env.FRONTEND_URL) {
+      console.error("❌ FRONTEND_URL is missing in .env file");
+      return response.status(500).json({
+        message: "Frontend URL not configured",
+        error: true,
+        success: false,
+      });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return response.status(404).json({
+        message: "User not found",
+        error: true,
+        success: false,
+      });
+    }
+
+    // Validate and prepare line items
+    const line_items = list_items.map((item, index) => {
+      if (!item.productId || !item.productId.name || !item.productId.price) {
+        throw new Error(`Invalid product data at index ${index}`);
+      }
+
       return {
         price_data: {
           currency: "inr",
           product_data: {
             name: item.productId.name,
-            images: item.productId.image,
+            images: item.productId.image || [],
             metadata: {
               productId: item.productId._id,
             },
@@ -107,7 +163,7 @@ const paymentController = async (request, response) => {
           enabled: true,
           minimum: 1,
         },
-        quantity: item.quantity,
+        quantity: item.quantity || 1,
       };
     });
 
@@ -125,12 +181,29 @@ const paymentController = async (request, response) => {
       cancel_url: `${process.env.FRONTEND_URL}/cancel`,
     };
 
+    console.log("Creating Stripe checkout session for user:", userId);
     const session = await Stripe.checkout.sessions.create(params);
+    console.log("✅ Stripe session created successfully:", session.id);
 
     return response.status(200).json(session);
   } catch (error) {
+    console.error("❌ Payment Controller Error:", error.message);
+    
+    // Provide more specific error messages
+    let errorMessage = "Payment processing failed";
+    
+    if (error.message.includes("Invalid product data")) {
+      errorMessage = "Invalid product information in cart";
+    } else if (error.type === "StripeInvalidRequestError") {
+      errorMessage = "Invalid payment request. Please try again.";
+    } else if (error.type === "StripeAuthenticationError") {
+      errorMessage = "Payment system authentication failed";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
     return response.status(500).json({
-      message: error.message || error,
+      message: errorMessage,
       error: true,
       success: false,
     });

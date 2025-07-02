@@ -22,6 +22,7 @@ import NewAdminDashboard from "../pages/NewAdminDashboard";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import AdminDiagnostic from "../pages/AdminDiagnostic";
+import Analytics from "../pages/Analytics";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -133,7 +134,7 @@ const router = createBrowserRouter([
               },
               {
                 path: "analytics",
-                element: <div className="p-6"><h1 className="text-2xl font-bold">Analytics</h1><p className="text-gray-600">Coming soon...</p></div>,
+                element: <Analytics />,
               },
               {
                 path: "website-banners",

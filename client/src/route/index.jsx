@@ -23,6 +23,10 @@ import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import AdminDiagnostic from "../pages/AdminDiagnostic";
 import Analytics from "../pages/Analytics";
+import ModernAdminLayout from "../layouts/ModernAdminLayout";
+import ModernAdminDashboard from "../pages/ModernAdminDashboard";
+import ModernUserManagement from "../pages/ModernUserManagement";
+import AdminPanelSelector from "../pages/AdminPanelSelector";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -75,6 +79,48 @@ const router = createBrowserRouter([
       {
         path: "admin-diagnostic",
         element: <AdminDiagnostic />,
+      },
+      {
+        path: "admin-selector",
+        element: (
+          <AdminPermision>
+            <AdminPanelSelector />
+          </AdminPermision>
+        ),
+      },
+      {
+        path: "modern-admin",
+        element: (
+          <AdminPermision>
+            <ModernAdminLayout />
+          </AdminPermision>
+        ),
+        children: [
+          {
+            path: "",
+            element: <ModernAdminDashboard />,
+          },
+          {
+            path: "users",
+            element: <ModernUserManagement />,
+          },
+          {
+            path: "orders",
+            element: <OrderManagement />,
+          },
+          {
+            path: "products",
+            element: <ProductAdmin />,
+          },
+          {
+            path: "analytics",
+            element: <Analytics />,
+          },
+          {
+            path: "settings",
+            element: <div className="p-6"><h1 className="text-2xl font-bold">Settings</h1><p className="text-gray-600">System configuration coming soon...</p></div>,
+          },
+        ],
       },
       {
         path: "dashboard",

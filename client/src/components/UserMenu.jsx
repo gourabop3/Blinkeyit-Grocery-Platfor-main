@@ -69,9 +69,9 @@ const UserMenu = ({ close }) => {
             <Link
               onClick={handleClose}
               to={"/admin"}
-              className="px-2 hover:bg-orange-200 py-1"
+              className="px-2 hover:bg-orange-200 py-1 text-blue-600 font-medium"
             >
-              Admin Dashboard
+              🎛️ Admin Dashboard
             </Link>
             
             <Link
@@ -79,46 +79,46 @@ const UserMenu = ({ close }) => {
               to={"/admin/orders"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              Order Management
+              📦 Order Management
             </Link>
 
             <Link
               onClick={handleClose}
-              to={"/admin/category"}
+              to={"/admin/products"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              Category
+              🛍️ Product Management
             </Link>
 
             <Link
               onClick={handleClose}
-              to={"/admin/subcategory"}
+              to={"/admin/add-product"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              Sub Category
+              ➕ Add Product
             </Link>
 
             <Link
               onClick={handleClose}
-              to={"/admin/upload-product"}
+              to={"/admin/categories"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              Upload Product
+              🏷️ Categories
             </Link>
 
             <Link
               onClick={handleClose}
-              to={"/admin/product"}
+              to={"/admin/users"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              Product
+              👥 User Management
             </Link>
 
             <button
               onClick={handleLogout}
               className="text-left px-2 hover:bg-orange-200 py-1"
             >
-              Log Out
+              🚪 Log Out
             </button>
           </>
         ) : (
@@ -129,7 +129,7 @@ const UserMenu = ({ close }) => {
               to={"/dashboard/myorders"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              My Orders
+              📋 My Orders
             </Link>
 
             <Link
@@ -137,14 +137,14 @@ const UserMenu = ({ close }) => {
               to={"/dashboard/address"}
               className="px-2 hover:bg-orange-200 py-1"
             >
-              Save Address
+              📍 Save Address
             </Link>
 
             <button
               onClick={handleLogout}
               className="text-left px-2 hover:bg-orange-200 py-1"
             >
-              Log Out
+              🚪 Log Out
             </button>
           </>
         )}

@@ -17,8 +17,10 @@ import SubCategoryPage from "../pages/SubCategoryPage";
 import UploadProduct from "../pages/UploadProduct";
 import ProductAdmin from "../pages/ProductAdmin";
 import AdminPermision from "../layouts/AdminPermision";
-import AdminLayout from "../layouts/AdminLayout";
-import NewAdminDashboard from "../pages/NewAdminDashboard";
+import ModernAdminLayout from "../layouts/ModernAdminLayout";
+import ModernAdminDashboard from "../pages/ModernAdminDashboard";
+import ModernProductManagement from "../pages/ModernProductManagement";
+import ModernAddProduct from "../pages/ModernAddProduct";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import AdminDiagnostic from "../pages/AdminDiagnostic";
@@ -96,43 +98,52 @@ const router = createBrowserRouter([
         path: "cancel",
         element: <Cancel />,
       },
-      // Admin Panel - Standalone route outside of dashboard
+      // Modern Admin Panel - Standalone route with modern UI
       {
         path: "admin",
         element: (
           <AdminPermision>
-            <AdminLayout />
+            <ModernAdminLayout />
           </AdminPermision>
         ),
         children: [
           {
             path: "",
-            element: <NewAdminDashboard />,
+            element: <ModernAdminDashboard />,
+          },
+          {
+            path: "analytics",
+            element: <div className="p-6"><h1 className="text-2xl font-bold">Analytics Dashboard</h1><p className="text-gray-600">Coming soon...</p></div>,
           },
           {
             path: "orders",
             element: <OrderManagement />,
           },
           {
-            path: "users",
-            element: <UserManagement />,
+            path: "products",
+            element: <ModernProductManagement />,
           },
+                      {
+              path: "add-product",
+              element: <ModernAddProduct />,
+            },
           {
-            path: "category",
+            path: "categories",
             element: <CategoryPage />,
           },
           {
-            path: "subcategory",
+            path: "subcategories",
             element: <SubCategoryPage />,
           },
           {
-            path: "upload-product",
-            element: <UploadProduct />,
+            path: "users",
+            element: <UserManagement />,
           },
-          {
-            path: "product",
-            element: <ProductAdmin />,
-          },
+                      // Product editing routes
+            {
+              path: "products/edit/:id",
+              element: <ModernAddProduct />,
+            },
         ],
       },
       // User Dashboard
@@ -152,7 +163,7 @@ const router = createBrowserRouter([
             path: "address",
             element: <Address />,
           },
-          // Redirect old admin route to new standalone admin
+          // Redirect old admin route to new modern admin
           {
             path: "admin",
             element: <Navigate to="/admin" replace />,

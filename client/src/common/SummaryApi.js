@@ -162,6 +162,10 @@ const SummaryApi = {
     url: "/api/dashboard/stats",
     method: "get",
   },
+  getAllOrders: {
+    url: "/api/order/all-orders",
+    method: "get",
+  },
 };
 
 export default SummaryApi;

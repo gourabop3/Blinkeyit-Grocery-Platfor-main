@@ -263,9 +263,66 @@ const getOrderDetailsController = async (request, response) => {
   }
 };
 
+// ===================== ADMIN - GET ALL ORDERS =====================
+const getAllOrdersController = async (request, response) => {
+  try {
+    // Pagination & filtering params (sent via query string)
+    let { page = 1, limit = 20, status = "all", search = "" } = request.query;
+
+    page = Number(page) || 1;
+    limit = Number(limit) || 20;
+
+    const query = {};
+
+    // Filter by order status if provided and not "all"
+    if (status && status !== "all") {
+      query.order_status = new RegExp(`^${status}$`, "i"); // case-insensitive exact match
+    }
+
+    // Basic search across orderId or user name/email
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      query.$or = [
+        { orderId: searchRegex },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Fetch orders with user & address populated
+    const [orders, totalCount] = await Promise.all([
+      OrderModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("userId", "name email")
+        .populate("delivery_address"),
+      OrderModel.countDocuments(query),
+    ]);
+
+    return response.json({
+      message: "All orders list",
+      data: orders,
+      totalCount,
+      totalPage: Math.ceil(totalCount / limit),
+      page,
+      limit,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
 module.exports = {
   CashOnDeliveryOrderController,
   paymentController,
   webhookStripe,
   getOrderDetailsController,
+  getAllOrdersController,
 };

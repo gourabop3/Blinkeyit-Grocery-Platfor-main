@@ -28,101 +28,41 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Mock data for demonstration
-  const mockUsers = [
-    {
-      _id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      mobile: "+91 9876543210",
-      role: "GENERAL",
-      status: "Active",
-      email_verify: true,
-      mobile_verify: true,
-      createdAt: "2024-01-15T10:30:00Z",
-      lastLogin: "2024-01-20T08:45:00Z",
-      totalOrders: 12,
-      totalSpent: 25999,
-    },
-    {
-      _id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      mobile: "+91 9876543211",
-      role: "ADMIN",
-      status: "Active",
-      email_verify: true,
-      mobile_verify: true,
-      createdAt: "2024-01-10T15:45:00Z",
-      lastLogin: "2024-01-21T09:30:00Z",
-      totalOrders: 0,
-      totalSpent: 0,
-    },
-    {
-      _id: "3",
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      mobile: "+91 9876543212",
-      role: "GENERAL",
-      status: "Inactive",
-      email_verify: false,
-      mobile_verify: true,
-      createdAt: "2024-01-05T09:20:00Z",
-      lastLogin: "2024-01-18T14:15:00Z",
-      totalOrders: 3,
-      totalSpent: 4997,
-    },
-    {
-      _id: "4",
-      name: "Alice Brown",
-      email: "alice@example.com",
-      mobile: "+91 9876543213",
-      role: "GENERAL",
-      status: "Active",
-      email_verify: true,
-      mobile_verify: false,
-      createdAt: "2024-01-12T11:10:00Z",
-      lastLogin: "2024-01-21T16:20:00Z",
-      totalOrders: 8,
-      totalSpent: 15600,
-    },
-  ];
+  const [pagination, setPagination] = useState({});
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        let filteredUsers = mockUsers;
-        
-        if (roleFilter !== "all") {
-          filteredUsers = filteredUsers.filter(
-            (user) => user.role.toLowerCase() === roleFilter.toLowerCase()
-          );
-        }
-        
-        if (statusFilter !== "all") {
-          filteredUsers = filteredUsers.filter(
-            (user) => user.status.toLowerCase() === statusFilter.toLowerCase()
-          );
-        }
-        
-        if (searchTerm) {
-          filteredUsers = filteredUsers.filter(
-            (user) =>
-              user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              user.mobile.includes(searchTerm)
-          );
-        }
-        
-        setUsers(filteredUsers);
-        setTotalPages(Math.ceil(filteredUsers.length / 10));
-        setLoading(false);
-      }, 1000);
+      console.log("Fetching users with filters:", { page, roleFilter, statusFilter, searchTerm });
+      
+      const response = await Axios({
+        ...SummaryApi.getAllUsers,
+        params: {
+          page,
+          limit: 10,
+          role: roleFilter !== "all" ? roleFilter : undefined,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          search: searchTerm || undefined,
+        },
+      });
+
+      console.log("Users API response:", response.data);
+
+      if (response.data.success) {
+        setUsers(response.data.data.users);
+        setPagination(response.data.data.pagination);
+        setTotalPages(response.data.data.pagination.totalPages);
+      } else {
+        throw new Error(response.data.message || "Failed to fetch users");
+      }
     } catch (error) {
+      console.error("Users API Error:", error);
       AxiosToastError(error);
+      // Set empty array on error
+      setUsers([]);
+      setPagination({});
+      setTotalPages(1);
+    } finally {
       setLoading(false);
     }
   };
@@ -133,26 +73,48 @@ const UserManagement = () => {
 
   const updateUserRole = async (userId, newRole) => {
     try {
-      // Simulate API call
-      const updatedUsers = users.map((user) =>
-        user._id === userId ? { ...user, role: newRole } : user
-      );
-      setUsers(updatedUsers);
-      toast.success("User role updated successfully");
+      const response = await Axios({
+        ...SummaryApi.updateUserRole,
+        url: `${SummaryApi.updateUserRole.url}/${userId}`,
+        data: { role: newRole },
+      });
+
+      if (response.data.success) {
+        // Update the user in the local state
+        const updatedUsers = users.map((user) =>
+          user._id === userId ? { ...user, role: newRole } : user
+        );
+        setUsers(updatedUsers);
+        toast.success("User role updated successfully");
+      } else {
+        throw new Error(response.data.message);
+      }
     } catch (error) {
+      console.error("Update role error:", error);
       AxiosToastError(error);
     }
   };
 
   const updateUserStatus = async (userId, newStatus) => {
     try {
-      // Simulate API call
-      const updatedUsers = users.map((user) =>
-        user._id === userId ? { ...user, status: newStatus } : user
-      );
-      setUsers(updatedUsers);
-      toast.success("User status updated successfully");
+      const response = await Axios({
+        ...SummaryApi.updateUserRole,
+        url: `${SummaryApi.updateUserRole.url}/${userId}`,
+        data: { status: newStatus },
+      });
+
+      if (response.data.success) {
+        // Update the user in the local state
+        const updatedUsers = users.map((user) =>
+          user._id === userId ? { ...user, status: newStatus } : user
+        );
+        setUsers(updatedUsers);
+        toast.success("User status updated successfully");
+      } else {
+        throw new Error(response.data.message);
+      }
     } catch (error) {
+      console.error("Update status error:", error);
       AxiosToastError(error);
     }
   };
@@ -160,11 +122,28 @@ const UserManagement = () => {
   const deleteUser = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        // Simulate API call
-        const updatedUsers = users.filter((user) => user._id !== userId);
-        setUsers(updatedUsers);
-        toast.success("User deleted successfully");
+        const response = await Axios({
+          ...SummaryApi.deleteUser,
+          url: `${SummaryApi.deleteUser.url}/${userId}`,
+        });
+
+        if (response.data.success) {
+          // Remove the user from the local state
+          const updatedUsers = users.filter((user) => user._id !== userId);
+          setUsers(updatedUsers);
+          toast.success("User deleted successfully");
+          
+          // Refresh data if current page becomes empty
+          if (updatedUsers.length === 0 && page > 1) {
+            setPage(page - 1);
+          } else {
+            fetchUsers(); // Refresh to get updated pagination
+          }
+        } else {
+          throw new Error(response.data.message);
+        }
       } catch (error) {
+        console.error("Delete user error:", error);
         AxiosToastError(error);
       }
     }

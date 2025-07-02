@@ -24,114 +24,40 @@ const OrderManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Mock data for demonstration
-  const mockOrders = [
-    {
-      _id: "1",
-      orderId: "ORD001",
-      userId: { name: "John Doe", email: "john@example.com" },
-      products: [
-        {
-          productId: "p1",
-          quantity: 2,
-          product_details: {
-            name: "Wireless Headphones",
-            image: ["/api/placeholder/100/100"],
-          },
-        },
-      ],
-      totalAmt: 2999,
-      order_status: "Processing",
-      payment_status: "PAID",
-      createdAt: "2024-01-15T10:30:00Z",
-      delivery_address: {
-        address_line: "123 Main St",
-        city: "Mumbai",
-        state: "Maharashtra",
-        pincode: "400001",
-      },
-    },
-    {
-      _id: "2",
-      orderId: "ORD002",
-      userId: { name: "Jane Smith", email: "jane@example.com" },
-      products: [
-        {
-          productId: "p2",
-          quantity: 1,
-          product_details: {
-            name: "Smartphone",
-            image: ["/api/placeholder/100/100"],
-          },
-        },
-      ],
-      totalAmt: 15999,
-      order_status: "Shipped",
-      payment_status: "PAID",
-      createdAt: "2024-01-14T15:45:00Z",
-      delivery_address: {
-        address_line: "456 Oak Ave",
-        city: "Delhi",
-        state: "Delhi",
-        pincode: "110001",
-      },
-    },
-    {
-      _id: "3",
-      orderId: "ORD003",
-      userId: { name: "Bob Johnson", email: "bob@example.com" },
-      products: [
-        {
-          productId: "p3",
-          quantity: 3,
-          product_details: {
-            name: "Gaming Mouse",
-            image: ["/api/placeholder/100/100"],
-          },
-        },
-      ],
-      totalAmt: 4497,
-      order_status: "Delivered",
-      payment_status: "PAID",
-      createdAt: "2024-01-13T09:20:00Z",
-      delivery_address: {
-        address_line: "789 Pine St",
-        city: "Bangalore",
-        state: "Karnataka",
-        pincode: "560001",
-      },
-    },
-  ];
+  const [pagination, setPagination] = useState({});
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        let filteredOrders = mockOrders;
-        
-        if (statusFilter !== "all") {
-          filteredOrders = filteredOrders.filter(
-            (order) => order.order_status.toLowerCase() === statusFilter.toLowerCase()
-          );
-        }
-        
-        if (searchTerm) {
-          filteredOrders = filteredOrders.filter(
-            (order) =>
-              order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              order.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              order.userId.email.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
-        
-        setOrders(filteredOrders);
-        setTotalPages(Math.ceil(filteredOrders.length / 10));
-        setLoading(false);
-      }, 1000);
+      console.log("Fetching orders with filters:", { page, statusFilter, searchTerm });
+      
+      const response = await Axios({
+        ...SummaryApi.getAllOrders,
+        params: {
+          page,
+          limit: 10,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          search: searchTerm || undefined,
+        },
+      });
+
+      console.log("Orders API response:", response.data);
+
+      if (response.data.success) {
+        setOrders(response.data.data.orders);
+        setPagination(response.data.data.pagination);
+        setTotalPages(response.data.data.pagination.totalPages);
+      } else {
+        throw new Error(response.data.message || "Failed to fetch orders");
+      }
     } catch (error) {
+      console.error("Orders API Error:", error);
       AxiosToastError(error);
+      // Set empty array on error
+      setOrders([]);
+      setPagination({});
+      setTotalPages(1);
+    } finally {
       setLoading(false);
     }
   };
@@ -142,13 +68,30 @@ const OrderManagement = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      // Simulate API call
-      const updatedOrders = orders.map((order) =>
-        order._id === orderId ? { ...order, order_status: newStatus } : order
-      );
-      setOrders(updatedOrders);
-      toast.success("Order status updated successfully");
+      const response = await Axios({
+        ...SummaryApi.updateOrderStatus,
+        url: `${SummaryApi.updateOrderStatus.url}/${orderId}`,
+        data: { order_status: newStatus },
+      });
+
+      if (response.data.success) {
+        // Update the order in the local state
+        const updatedOrders = orders.map((order) =>
+          order._id === orderId ? { ...order, order_status: newStatus } : order
+        );
+        setOrders(updatedOrders);
+        
+        // Update selected order if it's the one being updated
+        if (selectedOrder && selectedOrder._id === orderId) {
+          setSelectedOrder({ ...selectedOrder, order_status: newStatus });
+        }
+        
+        toast.success("Order status updated successfully");
+      } else {
+        throw new Error(response.data.message);
+      }
     } catch (error) {
+      console.error("Update order status error:", error);
       AxiosToastError(error);
     }
   };

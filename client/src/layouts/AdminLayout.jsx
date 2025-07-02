@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import {
   FiHome,
   FiUsers,
@@ -20,11 +20,36 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import { MdDiscount } from "react-icons/md";
+import Axios from "../utils/Axios";
+import SummaryApi from "../common/SummaryApi";
+import { logout } from "../store/userSlice";
+import toast from "react-hot-toast";
+import AxiosToastError from "../utils/AxiosToastError";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useSelector((state) => state.user);
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try {
+      const response = await Axios({
+        ...SummaryApi.logout,
+      });
+      console.log("logout", response);
+      if (response.data.success) {
+        dispatch(logout());
+        sessionStorage.clear();
+        toast.success(response.data.message);
+        navigate("/");
+      }
+    } catch (error) {
+      console.log(error);
+      AxiosToastError(error);
+    }
+  };
 
   const navigation = [
     {
@@ -160,7 +185,10 @@ const AdminLayout = () => {
                 <p className="text-xs text-slate-400">Administrator</p>
               </div>
             </div>
-            <button className="flex items-center w-full px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center w-full px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            >
               <FiLogOut className="w-4 h-4 mr-2" />
               Sign Out
             </button>

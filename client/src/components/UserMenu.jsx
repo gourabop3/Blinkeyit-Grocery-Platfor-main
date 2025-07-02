@@ -69,13 +69,12 @@ const UserMenu = ({ close }) => {
             <Link
               onClick={handleClose}
               to={"/dashboard/admin"}
-              className="px-2 hover:bg-orange-200 py-1"
+              className="px-2 hover:bg-orange-200 py-1 flex items-center gap-2"
             >
               Admin Dashboard
+              <HiOutlineExternalLink size={12} />
             </Link>
             
-         
-
             <button
               onClick={handleLogout}
               className="text-left px-2 hover:bg-orange-200 py-1"

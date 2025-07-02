@@ -3,6 +3,7 @@ const Stripe = require("../config/stripe.js");
 const CartProductModel = require("../models/cartProduct.model.js");
 const OrderModel = require("../models/order.model.js");
 const UserModel = require("../models/user.model.js");
+const ProductModel = require("../models/product.model.js");
 
 const CashOnDeliveryOrderController = async (request, response) => {
   try {
@@ -215,9 +216,152 @@ const getOrderDetailsController = async (request, response) => {
   }
 };
 
+// Get all orders for admin
+const getAllOrdersForAdmin = async (request, response) => {
+  try {
+    const { page = 1, limit = 10, status, search } = request.body;
+    
+    let query = {};
+    if (status && status !== 'all') {
+      query.order_status = status;
+    }
+    
+    if (search) {
+      query.$or = [
+        { orderId: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const skip = (page - 1) * limit;
+    
+    const [orders, totalCount] = await Promise.all([
+      OrderModel.find(query)
+        .populate('userId', 'name email')
+        .populate('delivery_address')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      OrderModel.countDocuments(query)
+    ]);
+    
+    return response.json({
+      message: "Orders fetched successfully",
+      data: orders,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      error: false,
+      success: true
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false
+    });
+  }
+};
+
+// Get dashboard statistics
+const getDashboardStats = async (request, response) => {
+  try {
+    const [
+      totalUsers,
+      totalProducts,
+      totalOrders,
+      pendingOrders,
+      shippedOrders,
+      deliveredOrders,
+      totalRevenue,
+      recentOrders
+    ] = await Promise.all([
+      UserModel.countDocuments(),
+      ProductModel.countDocuments(),
+      OrderModel.countDocuments(),
+      OrderModel.countDocuments({ order_status: 'Processing' }),
+      OrderModel.countDocuments({ order_status: 'Shipped' }),
+      OrderModel.countDocuments({ order_status: 'Delivered' }),
+      OrderModel.aggregate([
+        { $group: { _id: null, total: { $sum: '$totalAmt' } } }
+      ]),
+      OrderModel.find()
+        .populate('userId', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(5)
+    ]);
+    
+    return response.json({
+      message: "Dashboard stats fetched successfully",
+      data: {
+        totalUsers,
+        totalProducts,
+        totalOrders,
+        pendingOrders,
+        shippedOrders,
+        deliveredOrders,
+        totalRevenue: totalRevenue[0]?.total || 0,
+        recentOrders
+      },
+      error: false,
+      success: true
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false
+    });
+  }
+};
+
+// Update order status
+const updateOrderStatus = async (request, response) => {
+  try {
+    const { orderId, status } = request.body;
+    
+    if (!orderId || !status) {
+      return response.status(400).json({
+        message: "Order ID and status are required",
+        error: true,
+        success: false
+      });
+    }
+    
+    const updatedOrder = await OrderModel.findByIdAndUpdate(
+      orderId,
+      { order_status: status },
+      { new: true }
+    ).populate('userId', 'name email');
+    
+    if (!updatedOrder) {
+      return response.status(404).json({
+        message: "Order not found",
+        error: true,
+        success: false
+      });
+    }
+    
+    return response.json({
+      message: "Order status updated successfully",
+      data: updatedOrder,
+      error: false,
+      success: true
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false
+    });
+  }
+};
+
 module.exports = {
   CashOnDeliveryOrderController,
   paymentController,
   webhookStripe,
   getOrderDetailsController,
+  getAllOrdersForAdmin,
+  getDashboardStats,
+  updateOrderStatus,
 };

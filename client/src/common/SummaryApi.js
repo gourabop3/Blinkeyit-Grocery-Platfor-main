@@ -157,6 +157,19 @@ const SummaryApi = {
     url: "/api/order/order-list",
     method: "get",
   },
+  // Admin order management
+  getAdminOrders: {
+    url: "/api/order/admin/get-all-orders",
+    method: "post",
+  },
+  getDashboardStats: {
+    url: "/api/order/admin/dashboard-stats",
+    method: "get",
+  },
+  updateOrderStatus: {
+    url: "/api/order/admin/update-status",
+    method: "put",
+  },
 };
 
 export default SummaryApi;

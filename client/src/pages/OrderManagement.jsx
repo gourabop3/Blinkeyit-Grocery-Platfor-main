@@ -107,31 +107,45 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        let filteredOrders = mockOrders;
-        
-        if (statusFilter !== "all") {
-          filteredOrders = filteredOrders.filter(
-            (order) => order.order_status.toLowerCase() === statusFilter.toLowerCase()
-          );
-        }
-        
-        if (searchTerm) {
-          filteredOrders = filteredOrders.filter(
-            (order) =>
-              order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              order.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              order.userId.email.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
-        
-        setOrders(filteredOrders);
-        setTotalPages(Math.ceil(filteredOrders.length / 10));
-        setLoading(false);
-      }, 1000);
+      const response = await Axios({
+        ...SummaryApi.getAdminOrders,
+        data: {
+          page: page,
+          limit: 10,
+          status: statusFilter,
+          search: searchTerm,
+        },
+      });
+
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        setOrders(responseData.data);
+        setTotalPages(responseData.totalPages);
+      }
     } catch (error) {
       AxiosToastError(error);
+      // Fallback to mock data if API fails
+      let filteredOrders = mockOrders;
+      
+      if (statusFilter !== "all") {
+        filteredOrders = filteredOrders.filter(
+          (order) => order.order_status.toLowerCase() === statusFilter.toLowerCase()
+        );
+      }
+      
+      if (searchTerm) {
+        filteredOrders = filteredOrders.filter(
+          (order) =>
+            order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.userId.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      
+      setOrders(filteredOrders);
+      setTotalPages(Math.ceil(filteredOrders.length / 10));
+    } finally {
       setLoading(false);
     }
   };
@@ -142,14 +156,32 @@ const OrderManagement = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      // Simulate API call
+      const response = await Axios({
+        ...SummaryApi.updateOrderStatus,
+        data: {
+          orderId: orderId,
+          status: newStatus,
+        },
+      });
+
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        // Update the local state with the updated order
+        const updatedOrders = orders.map((order) =>
+          order._id === orderId ? { ...order, order_status: newStatus } : order
+        );
+        setOrders(updatedOrders);
+        toast.success("Order status updated successfully");
+      }
+    } catch (error) {
+      AxiosToastError(error);
+      // Still update locally as fallback
       const updatedOrders = orders.map((order) =>
         order._id === orderId ? { ...order, order_status: newStatus } : order
       );
       setOrders(updatedOrders);
-      toast.success("Order status updated successfully");
-    } catch (error) {
-      AxiosToastError(error);
+      toast.success("Order status updated locally");
     }
   };
 

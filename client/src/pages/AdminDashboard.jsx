@@ -31,40 +31,45 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // This would be implemented in the backend
-      // For now, using mock data
-      setTimeout(() => {
+      const response = await Axios({
+        ...SummaryApi.getDashboardStats,
+      });
+
+      const { data: responseData } = response;
+
+      if (responseData.success) {
         setDashboardData({
-          totalUsers: 1245,
-          totalProducts: 567,
-          totalOrders: 892,
-          totalRevenue: 45670,
-          pendingOrders: 23,
-          shippedOrders: 45,
-          deliveredOrders: 824,
-          recentOrders: [
-            {
-              _id: "1",
-              orderId: "ORD001",
-              customerName: "John Doe",
-              totalAmt: 299,
-              order_status: "Processing",
-              createdAt: new Date().toISOString(),
-            },
-            {
-              _id: "2",
-              orderId: "ORD002",
-              customerName: "Jane Smith",
-              totalAmt: 599,
-              order_status: "Shipped",
-              createdAt: new Date().toISOString(),
-            },
-          ],
+          totalUsers: responseData.data.totalUsers,
+          totalProducts: responseData.data.totalProducts,
+          totalOrders: responseData.data.totalOrders,
+          totalRevenue: responseData.data.totalRevenue,
+          pendingOrders: responseData.data.pendingOrders,
+          shippedOrders: responseData.data.shippedOrders,
+          deliveredOrders: responseData.data.deliveredOrders,
+          recentOrders: responseData.data.recentOrders.map(order => ({
+            _id: order._id,
+            orderId: order.orderId,
+            customerName: order.userId?.name || 'Unknown Customer',
+            totalAmt: order.totalAmt,
+            order_status: order.order_status,
+            createdAt: order.createdAt,
+          })),
         });
-        setLoading(false);
-      }, 1000);
+      }
     } catch (error) {
       AxiosToastError(error);
+      // Fallback to some default data if API fails
+      setDashboardData({
+        totalUsers: 0,
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+        shippedOrders: 0,
+        deliveredOrders: 0,
+        recentOrders: [],
+      });
+    } finally {
       setLoading(false);
     }
   };

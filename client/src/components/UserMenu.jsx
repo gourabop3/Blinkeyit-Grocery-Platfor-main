@@ -63,43 +63,91 @@ const UserMenu = ({ close }) => {
       <Divider />
 
       <div className="text-sm grid gap-1">
-        {/* Admin Section - Only show Admin Dashboard entry point */}
-        {isAdmin(user.role) && (
-          <Link
-            onClick={handleClose}
-            to={"/dashboard/admin"}
-            className="px-2 hover:bg-orange-200 py-1 text-blue-600 font-medium"
-          >
-            Admin Dashboard
-          </Link>
+        {/* Admin Section - Only for admins */}
+        {isAdmin(user.role) ? (
+          <>
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/admin"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Admin Dashboard
+            </Link>
+            
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/orders"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Order Management
+            </Link>
+
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/category"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Category
+            </Link>
+
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/subcategory"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Sub Category
+            </Link>
+
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/upload-product"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Upload Product
+            </Link>
+
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/product"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Product
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="text-left px-2 hover:bg-orange-200 py-1"
+            >
+              Log Out
+            </button>
+          </>
+        ) : (
+          /* User Section - Only for regular users */
+          <>
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/myorders"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              My Orders
+            </Link>
+
+            <Link
+              onClick={handleClose}
+              to={"/dashboard/address"}
+              className="px-2 hover:bg-orange-200 py-1"
+            >
+              Save Address
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="text-left px-2 hover:bg-orange-200 py-1"
+            >
+              Log Out
+            </button>
+          </>
         )}
-
-        {/* Add divider between admin and user sections if user is admin */}
-        {isAdmin(user.role) && <Divider />}
-
-        {/* User Section - Always visible for both admin and regular users */}
-        <Link
-          onClick={handleClose}
-          to={"/dashboard/myorders"}
-          className="px-2 hover:bg-orange-200 py-1"
-        >
-          My Orders
-        </Link>
-
-        <Link
-          onClick={handleClose}
-          to={"/dashboard/address"}
-          className="px-2 hover:bg-orange-200 py-1"
-        >
-          Save Address
-        </Link>
-
-        <button
-          onClick={handleLogout}
-          className="text-left px-2 hover:bg-orange-200 py-1"
-        >
-          Log Out
-        </button>
       </div>
     </div>
   );

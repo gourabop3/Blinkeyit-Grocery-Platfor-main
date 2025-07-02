@@ -7,9 +7,38 @@ import {
   FiDollarSign,
   FiTrendingUp,
   FiActivity,
+  FiArrowUp,
+  FiArrowDown,
+  FiMoreVertical,
+  FiCalendar,
+  FiFilter,
+  FiDownload,
+  FiRefreshCw,
+  FiEye,
+  FiEdit,
+  FiTrash2,
+  FiBell,
+  FiSettings,
+  FiSearch,
+  FiShoppingCart,
+  FiCreditCard,
+  FiTruck,
+  FiCheckCircle,
+  FiClock,
+  FiAlertCircle,
 } from "react-icons/fi";
-import { MdPendingActions, MdLocalShipping, MdDone } from "react-icons/md";
-import { AiOutlineShoppingCart } from "react-icons/ai";
+import { 
+  MdPendingActions, 
+  MdLocalShipping, 
+  MdDone,
+  MdTrendingUp,
+  MdTrendingDown,
+  MdAnalytics,
+  MdInventory,
+} from "react-icons/md";
+import { AiOutlineShoppingCart, AiFillStar } from "react-icons/ai";
+import { BsGraphUp, BsGraphDown, BsPieChart } from "react-icons/bs";
+import { HiOutlineDocumentReport } from "react-icons/hi";
 import Axios from "../utils/Axios";
 import SummaryApi from "../common/SummaryApi";
 import AxiosToastError from "../utils/AxiosToastError";
@@ -27,6 +56,8 @@ const AdminDashboard = () => {
     recentOrders: [],
   });
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('7d');
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboardData = async () => {
     try {

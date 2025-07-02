@@ -162,6 +162,28 @@ const SummaryApi = {
     url: "/api/dashboard/stats",
     method: "get",
   },
+  // Admin User Management APIs
+  getAllUsers: {
+    url: "/api/user/admin/all-users",
+    method: "get",
+  },
+  updateUserRole: {
+    url: "/api/user/admin/update-user",
+    method: "put",
+  },
+  deleteUser: {
+    url: "/api/user/admin/delete-user",
+    method: "delete",
+  },
+  // Admin Order Management APIs (using existing order endpoints)
+  getAllOrders: {
+    url: "/api/order/admin/all-orders",
+    method: "get",
+  },
+  updateOrderStatus: {
+    url: "/api/order/admin/update-status",
+    method: "put",
+  },
 };
 
 export default SummaryApi;

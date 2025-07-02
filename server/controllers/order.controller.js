@@ -263,9 +263,137 @@ const getOrderDetailsController = async (request, response) => {
   }
 };
 
+//get all orders for admin (with pagination and filtering)
+const getAllOrdersController = async (request, response) => {
+  try {
+    const { page = 1, limit = 10, status, search } = request.query;
+    
+    // Build filter object
+    const filter = {};
+    
+    if (status && status !== 'all') {
+      filter.order_status = status;
+    }
+    
+    const skip = (page - 1) * limit;
+    
+    // If search is provided, we need to search in user details
+    let userFilter = {};
+    if (search) {
+      const searchUsers = await UserModel.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      
+      const userIds = searchUsers.map(user => user._id);
+      
+      filter.$or = [
+        { orderId: { $regex: search, $options: 'i' } },
+        { userId: { $in: userIds } }
+      ];
+    }
+    
+    // Get total count for pagination
+    const totalOrders = await OrderModel.countDocuments(filter);
+    
+    // Get orders with pagination and populate user details
+    const orders = await OrderModel.find(filter)
+      .populate('userId', 'name email mobile')
+      .populate('delivery_address')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Format orders for frontend
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      customerName: order.userId?.name || "Unknown Customer",
+      customerEmail: order.userId?.email || "Unknown Email"
+    }));
+    
+    return response.json({
+      message: "Orders fetched successfully",
+      error: false,
+      success: true,
+      data: {
+        orders: formattedOrders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalOrders / limit),
+          totalOrders,
+          hasNext: page * limit < totalOrders,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
+//update order status for admin
+const updateOrderStatusController = async (request, response) => {
+  try {
+    const { orderId } = request.params;
+    const { order_status } = request.body;
+    
+    if (!orderId) {
+      return response.status(400).json({
+        message: "Order ID is required",
+        error: true,
+        success: false,
+      });
+    }
+    
+    if (!order_status) {
+      return response.status(400).json({
+        message: "Order status is required",
+        error: true,
+        success: false,
+      });
+    }
+    
+    const updatedOrder = await OrderModel.findByIdAndUpdate(
+      orderId,
+      { order_status },
+      { new: true }
+    ).populate('userId', 'name email');
+    
+    if (!updatedOrder) {
+      return response.status(404).json({
+        message: "Order not found",
+        error: true,
+        success: false,
+      });
+    }
+    
+    return response.json({
+      message: "Order status updated successfully",
+      error: false,
+      success: true,
+      data: updatedOrder
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
 module.exports = {
   CashOnDeliveryOrderController,
   paymentController,
   webhookStripe,
   getOrderDetailsController,
+  getAllOrdersController,
+  updateOrderStatusController,
 };

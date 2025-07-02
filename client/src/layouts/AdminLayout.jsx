@@ -9,7 +9,7 @@ import {
   FiPlus,
   FiGrid,
   FiLayers,
-  FiBarChart3,
+  FiBarChart2,
   FiImage,
   FiSmartphone,
   FiMenu,
@@ -69,7 +69,7 @@ const AdminLayout = () => {
     {
       name: "Analytics",
       href: "/dashboard/analytics",
-      icon: FiBarChart3,
+      icon: FiBarChart2,
     },
     {
       name: "Website Banners",

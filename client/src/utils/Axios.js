@@ -9,21 +9,31 @@ const Axios = axios.create({
 //sending access token in the header
 Axios.interceptors.request.use(
   async (config) => {
-    // Debug log: outgoing request
+    const accessToken = sessionStorage.getItem("accesstoken");
+    const refreshToken = sessionStorage.getItem("refreshToken");
+
+    // Enhanced debug log for mobile debugging
     console.log("[AXIOS][REQUEST]", {
       method: config.method,
       url: config.baseURL + config.url,
+      hasAccessToken: Boolean(accessToken),
+      hasRefreshToken: Boolean(refreshToken),
+      accessTokenLength: accessToken ? accessToken.length : 0,
+      userAgent: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
       withAuth: Boolean(config.headers.Authorization),
     });
-    const accessToken = sessionStorage.getItem("accesstoken");
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+      console.log("[AXIOS][TOKEN] Token added to Authorization header");
+    } else {
+      console.warn("[AXIOS][TOKEN] No access token found in sessionStorage");
     }
 
     return config;
   },
   (error) => {
+    console.error("[AXIOS][REQUEST][ERROR]", error);
     return Promise.reject(error);
   }
 );

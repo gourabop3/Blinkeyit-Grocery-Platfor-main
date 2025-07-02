@@ -6,19 +6,42 @@ import toast from 'react-hot-toast'
 import AxiosToastError from '../utils/AxiosToastError'
 import Loading from './Loading'
 import { useSelector } from 'react-redux'
-import { FaMinus, FaPlus } from "react-icons/fa6";
+import { FaMinus, FaPlus } from "react-icons/fa6"
+import { useNavigate } from 'react-router-dom'
+import { isUserAuthenticated, checkAuthToken } from '../utils/checkAuthToken'
 
 const AddToCartButton = ({ data }) => {
     const { fetchCartItem, updateCartItem, deleteCartItem } = useGlobalContext()
     const [loading, setLoading] = useState(false)
     const cartItem = useSelector(state => state.cartItem.cart)
+    const user = useSelector(state => state.user)
     const [isAvailableCart, setIsAvailableCart] = useState(false)
     const [qty, setQty] = useState(0)
     const [cartItemDetails,setCartItemsDetails] = useState()
+    const navigate = useNavigate()
 
     const handleADDTocart = async (e) => {
         e.preventDefault()
         e.stopPropagation()
+
+        // Check authentication before adding to cart
+        if (!isUserAuthenticated(user)) {
+            toast.error("Please login to add items to cart")
+            // Navigate to login page after a short delay
+            setTimeout(() => {
+                navigate('/login')
+            }, 1500)
+            return
+        }
+
+        // Additional check for token availability
+        if (!checkAuthToken()) {
+            toast.error("Session expired. Please login again")
+            setTimeout(() => {
+                navigate('/login')
+            }, 1500)
+            return
+        }
 
         try {
             setLoading(true)
@@ -39,7 +62,20 @@ const AddToCartButton = ({ data }) => {
                 }
             }
         } catch (error) {
-            AxiosToastError(error)
+            // Enhanced error handling for authentication issues
+            if (error.response?.status === 401) {
+                toast.error("Session expired. Please login again")
+                setTimeout(() => {
+                    navigate('/login')
+                }, 1500)
+            } else if (error.response?.data?.message === "Provide token") {
+                toast.error("Authentication required. Please login")
+                setTimeout(() => {
+                    navigate('/login')
+                }, 1500)
+            } else {
+                AxiosToastError(error)
+            }
         } finally {
             setLoading(false)
         }
@@ -60,24 +96,61 @@ const AddToCartButton = ({ data }) => {
     const increaseQty = async(e) => {
         e.preventDefault()
         e.stopPropagation()
+
+        // Check authentication before updating cart
+        if (!isUserAuthenticated(user)) {
+            toast.error("Please login to update cart")
+            setTimeout(() => {
+                navigate('/login')
+            }, 1500)
+            return
+        }
     
-       const response = await  updateCartItem(cartItemDetails?._id,qty+1)
-        
-       if(response.success){
-        toast.success("Item added")
+       try {
+           const response = await updateCartItem(cartItemDetails?._id,qty+1)
+           
+           if(response.success){
+            toast.success("Item added")
+           }
+       } catch (error) {
+           if (error.response?.status === 401 || error.response?.data?.message === "Provide token") {
+               toast.error("Session expired. Please login again")
+               setTimeout(() => {
+                   navigate('/login')
+               }, 1500)
+           }
        }
     }
 
     const decreaseQty = async(e) => {
         e.preventDefault()
         e.stopPropagation()
-        if(qty === 1){
-            deleteCartItem(cartItemDetails?._id)
-        }else{
-            const response = await updateCartItem(cartItemDetails?._id,qty-1)
 
-            if(response.success){
-                toast.success("Item remove")
+        // Check authentication before updating cart
+        if (!isUserAuthenticated(user)) {
+            toast.error("Please login to update cart")
+            setTimeout(() => {
+                navigate('/login')
+            }, 1500)
+            return
+        }
+
+        try {
+            if(qty === 1){
+                await deleteCartItem(cartItemDetails?._id)
+            }else{
+                const response = await updateCartItem(cartItemDetails?._id,qty-1)
+
+                if(response.success){
+                    toast.success("Item remove")
+                }
+            }
+        } catch (error) {
+            if (error.response?.status === 401 || error.response?.data?.message === "Provide token") {
+                toast.error("Session expired. Please login again")
+                setTimeout(() => {
+                    navigate('/login')
+                }, 1500)
             }
         }
     }

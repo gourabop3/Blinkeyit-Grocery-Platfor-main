@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { pricewithDiscount } from "../utils/PriceWithDiscount";
 import { handleAddAddress } from "../store/addressSlice";
 import { setOrder } from "../store/orderSlice";
+import { checkAuthToken } from "../utils/checkAuthToken";
 
 export const GlobalContext = createContext(null);
 
@@ -23,6 +24,12 @@ const GlobalProvider = ({ children }) => {
 
   const fetchCartItem = async () => {
     try {
+      // Check if user has valid token before fetching cart
+      if (!checkAuthToken()) {
+        console.log("No valid token found, skipping cart fetch");
+        return;
+      }
+
       const response = await Axios({
         ...SummaryApi.getCartItem,
       });
@@ -33,12 +40,22 @@ const GlobalProvider = ({ children }) => {
         console.log(responseData);
       }
     } catch (error) {
-      console.log(error);
+      if (error.response?.status === 401 || error.response?.data?.message === "Provide token") {
+        console.log("Authentication error while fetching cart items");
+        dispatch(handleAddItemCart([]));
+      } else {
+        console.log(error);
+      }
     }
   };
 
   const updateCartItem = async (id, qty) => {
     try {
+      // Check authentication before updating cart
+      if (!checkAuthToken()) {
+        throw new Error("Authentication required");
+      }
+
       const response = await Axios({
         ...SummaryApi.updateCartItemQty,
         data: {
@@ -54,13 +71,22 @@ const GlobalProvider = ({ children }) => {
         return responseData;
       }
     } catch (error) {
-      AxiosToastError(error);
+      if (error.response?.status === 401 || error.response?.data?.message === "Provide token") {
+        throw error; // Re-throw auth errors to be handled by the calling component
+      } else {
+        AxiosToastError(error);
+      }
       return error;
     }
   };
 
   const deleteCartItem = async (cartId) => {
     try {
+      // Check authentication before deleting cart item
+      if (!checkAuthToken()) {
+        throw new Error("Authentication required");
+      }
+
       const response = await Axios({
         ...SummaryApi.deleteCartItem,
         data: {
@@ -74,7 +100,11 @@ const GlobalProvider = ({ children }) => {
         fetchCartItem();
       }
     } catch (error) {
-      AxiosToastError(error);
+      if (error.response?.status === 401 || error.response?.data?.message === "Provide token") {
+        toast.error("Session expired. Please login again");
+      } else {
+        AxiosToastError(error);
+      }
     }
   };
 

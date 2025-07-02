@@ -12,12 +12,12 @@ import {
   setLoadingCategory,
 } from "./store/productSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { handleAddItemCart } from "./store/cartSlice";
-import { setAllAddress } from "./store/addressSlice";
+import { handleAddItemCart } from "./store/cartProduct";
+import { handleAddAddress } from "./store/addressSlice";
 import Axios from "./utils/Axios";
 import SummaryApi from "./common/SummaryApi";
 import GlobalProvider from "./provider/GlobalProvider";
-import CartMobileLink from "./components/CartMobileLink";
+import CartMobileLink from "./components/CartMobile";
 import isAdmin from "./utils/isAdmin";
 
 const App = () => {
@@ -25,6 +25,10 @@ const App = () => {
   const user = useSelector(state => state.user);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Check if current user is admin and on admin routes
+  const userIsAdmin = user && user.role && isAdmin(user.role);
+  const isAdminRoute = location.pathname.startsWith('/dashboard/admin');
 
   const fetchUser = async () => {
     const userData = await fetchUserDetails();
@@ -102,7 +106,7 @@ const App = () => {
       const { data: responseData } = response;
 
       if (responseData.success) {
-        dispatch(setAllAddress(responseData.data));
+        dispatch(handleAddAddress(responseData.data));
       }
     } catch (error) {
       console.log(error);
@@ -138,12 +142,13 @@ const App = () => {
   return (
     <GlobalProvider>
       <Header />
-      <main className="min-h-[78vh]">
+      <main className={userIsAdmin && isAdminRoute ? "min-h-screen" : "min-h-[78vh]"}>
         <Outlet />
       </main>
       <Footer />
       <Toaster />
-      {location.pathname !== "/checkout" && <CartMobileLink />}
+      {/* Hide CartMobileLink for admin users */}
+      {!(userIsAdmin && isAdminRoute) && location.pathname !== "/checkout" && <CartMobileLink />}
     </GlobalProvider>
   );
 };

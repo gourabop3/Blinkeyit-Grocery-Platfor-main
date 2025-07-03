@@ -26,3 +26,21 @@ body {
 .scrollbarCustom::-webkit-scrollbar-thumb {
   @apply bg-blue-100 rounded-full;
 }
+
+/* ---------- custom animations ---------- */
+@keyframes slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .animate-slide-in {
+    animation: slide-in 0.25s ease-out both;
+  }
+}

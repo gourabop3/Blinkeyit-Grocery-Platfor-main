@@ -4,6 +4,7 @@ const DeliveryPartnerModel = require("../models/deliveryPartner.model");
 const DeliveryTrackingModel = require("../models/deliveryTracking.model");
 const UserModel = require("../models/user.model");
 const geolib = require("geolib");
+const OrderModel = require("../models/order.model");
 
 let io;
 const connectedUsers = new Map(); // userId -> socketId
@@ -142,7 +143,7 @@ const initializeSocket = (server) => {
                 await tracking.save();
               }
 
-              // Broadcast location with extras
+              // Broadcast location with extras to order room
               io.to(`order_${orderId}`).emit("delivery_location_update", {
                 orderId,
                 location: { latitude, longitude },
@@ -152,6 +153,22 @@ const initializeSocket = (server) => {
                 distanceToCustomer: distanceKm,
                 estimatedArrival: eta,
                 route: tracking.route.map(p => [p.latitude, p.longitude])
+              });
+
+              // Additionally, notify all connected admin sockets so admin dashboard can display live updates
+              io.sockets.sockets.forEach((s) => {
+                if (s.userType === 'admin') {
+                  s.emit('delivery_location_update', {
+                    orderId,
+                    location: { latitude, longitude },
+                    timestamp: new Date(),
+                    speed,
+                    heading,
+                    distanceToCustomer: distanceKm,
+                    estimatedArrival: eta,
+                    route: tracking.route.map(p => [p.latitude, p.longitude])
+                  });
+                }
               });
             }
           }
@@ -186,10 +203,27 @@ const initializeSocket = (server) => {
               },
             });
             
-            // Update order status in main order document
-            const OrderModel = require("../models/order.model");
+            // Notify connected admin sockets about status change
+            io.sockets.sockets.forEach((s) => {
+              if (s.userType === 'admin') {
+                s.emit('delivery_status_update', {
+                  orderId,
+                  status,
+                  timestamp: new Date(),
+                  notes,
+                  location,
+                  partner: {
+                    name: socket.user.name,
+                    mobile: socket.user.mobile,
+                    vehicle: socket.user.vehicleDetails,
+                  },
+                });
+              }
+            });
+
+            // Also update the main Order document to keep order_status in sync
             let orderStatus = "Processing";
-            
+
             switch (status) {
               case "assigned": orderStatus = "Assigned"; break;
               case "pickup_started": orderStatus = "Preparing"; break;
@@ -199,7 +233,7 @@ const initializeSocket = (server) => {
               case "failed": orderStatus = "Failed"; break;
               case "cancelled": orderStatus = "Cancelled"; break;
             }
-            
+
             await OrderModel.findByIdAndUpdate(orderId, { order_status: orderStatus });
           }
           

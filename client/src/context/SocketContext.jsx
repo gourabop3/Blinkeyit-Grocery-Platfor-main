@@ -23,11 +23,19 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && token) {
+      // Map application roles to socket userType labels expected by backend
+      const roleToUserType = {
+        'ADMIN': 'admin',
+        'USER': 'customer',
+      };
+
+      const userType = roleToUserType[user?.role] || 'customer';
+
       // Initialize socket connection
       const socketInstance = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
         auth: {
           token: token,
-          userType: user?.role || 'customer', // Can be 'customer', 'partner', or 'admin'
+          userType, // Expected values: 'customer', 'partner', or 'admin'
         },
         transports: ['websocket', 'polling'],
       });

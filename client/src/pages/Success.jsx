@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useGlobalContext } from '../provider/GlobalProvider'
 import { useDispatch } from 'react-redux'
@@ -10,9 +10,18 @@ const Success = () => {
   const { fetchCartItem, fetchOrder } = useGlobalContext()
   const dispatch = useDispatch()
   const [isProcessing, setIsProcessing] = useState(true)
+  const hasProcessed = useRef(false) // Flag to prevent multiple executions
+  const hasShownToast = useRef(false) // Flag to prevent multiple toasts
     
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasProcessed.current) return
+    hasProcessed.current = true
+
     const handleSuccessPayment = async () => {
+      // Clear any existing toasts first
+      toast.dismiss()
+      
       console.log("Success page loaded, URL params:", location.search)
       
       // Check if this is a return from Stripe payment
@@ -29,6 +38,12 @@ const Success = () => {
       
       if (isFromStripe || pendingCartClear === 'true') {
         console.log("Processing successful payment...")
+        
+        // Show success message immediately (only once)
+        if (!hasShownToast.current) {
+          toast.success('Payment completed successfully! Your order has been placed.')
+          hasShownToast.current = true
+        }
         
         // Add a delay to ensure webhook has been processed
         await new Promise(resolve => setTimeout(resolve, 3000))
@@ -52,12 +67,12 @@ const Success = () => {
           // Remove the pending flag
           sessionStorage.removeItem('pendingCartClear')
           
-          // Show success message
-          toast.success('Payment completed successfully! Your order has been placed.')
-          
         } catch (error) {
           console.error("Error refreshing data:", error)
-          toast.error('Payment successful, but there was an issue refreshing data. Please check your orders.')
+          if (!hasShownToast.current) {
+            toast.error('Payment successful, but there was an issue refreshing data. Please check your orders.')
+            hasShownToast.current = true
+          }
         }
       } else {
         // Not from payment, just refresh data
@@ -78,7 +93,7 @@ const Success = () => {
     }
 
     handleSuccessPayment()
-  }, [fetchCartItem, fetchOrder, location.search, dispatch])
+  }, []) // Empty dependency array to run only once
   
   console.log("Success page location:", location)  
   

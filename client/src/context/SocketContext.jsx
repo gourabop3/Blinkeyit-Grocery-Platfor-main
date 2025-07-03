@@ -177,6 +177,18 @@ export const SocketProvider = ({ children }) => {
         }));
       });
 
+      socketInstance.on('delivery_update', (data) => {
+        console.log('📦 Initial / requested delivery update:', data);
+        setDeliveryUpdates(prev => ({
+          ...prev,
+          [data.orderId]: {
+            ...prev[data.orderId],
+            ...data, // merge all fields coming from server
+            lastUpdate: new Date(),
+          }
+        }));
+      });
+
       setSocket(socketInstance);
 
       // Cleanup on unmount

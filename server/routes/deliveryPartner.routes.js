@@ -15,7 +15,7 @@ const {
   updatePartnerStatusController,
   autoAssignOrderController,
 } = require("../controllers/deliveryPartner.controller");
-const authToken = require("../middlewares/auth");
+const auth = require("../middlewares/auth.middleware.js");
 
 const deliveryPartnerRouter = express.Router();
 
@@ -24,7 +24,7 @@ deliveryPartnerRouter.post("/register", registerPartnerController);
 deliveryPartnerRouter.post("/login", loginPartnerController);
 
 // Protected routes (authentication required)
-deliveryPartnerRouter.use(authToken); // Apply auth middleware to all routes below
+deliveryPartnerRouter.use(auth); // Apply auth middleware to all routes below
 
 // Partner profile management
 deliveryPartnerRouter.get("/profile", getPartnerProfileController);

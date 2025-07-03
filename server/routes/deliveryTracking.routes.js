@@ -10,12 +10,12 @@ const {
   getDeliveryAnalyticsController,
   cancelDeliveryController,
 } = require("../controllers/deliveryTracking.controller");
-const authToken = require("../middlewares/auth");
+const auth = require("../middlewares/auth.middleware.js");
 
 const deliveryTrackingRouter = express.Router();
 
 // Apply authentication middleware to all routes
-deliveryTrackingRouter.use(authToken);
+deliveryTrackingRouter.use(auth);
 
 // Customer/User routes
 deliveryTrackingRouter.get("/order/:orderId", getTrackingByOrderController); // Get full tracking info

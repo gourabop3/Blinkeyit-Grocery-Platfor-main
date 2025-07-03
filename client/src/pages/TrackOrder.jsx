@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
-import SummaryApi from '../common/SummaryApi';
+import SummaryApi, { baseURL } from '../common/SummaryApi';
 import toast from 'react-hot-toast';
 import DeliveryMap from '../components/DeliveryMap';
 import StatusBadge from '../components/StatusBadge';
@@ -124,7 +124,7 @@ const TrackOrder = () => {
   const fetchTrackingData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(SummaryApi.getDeliveryTracking.url.replace(':orderId', orderId), {
+      const response = await fetch(baseURL + SummaryApi.getDeliveryTracking.url.replace(':orderId', orderId), {
         method: SummaryApi.getDeliveryTracking.method,
         credentials: 'include',
         headers: {
@@ -149,7 +149,7 @@ const TrackOrder = () => {
 
   const fetchLiveLocation = async () => {
     try {
-      const response = await fetch(SummaryApi.getLiveLocation.url.replace(':orderId', orderId), {
+      const response = await fetch(baseURL + SummaryApi.getLiveLocation.url.replace(':orderId', orderId), {
         method: SummaryApi.getLiveLocation.method,
         credentials: 'include',
         headers: {
@@ -174,7 +174,7 @@ const TrackOrder = () => {
     }
 
     try {
-      const response = await fetch(SummaryApi.verifyDeliveryOTP.url.replace(':orderId', orderId), {
+      const response = await fetch(baseURL + SummaryApi.verifyDeliveryOTP.url.replace(':orderId', orderId), {
         method: SummaryApi.verifyDeliveryOTP.method,
         credentials: 'include',
         headers: {

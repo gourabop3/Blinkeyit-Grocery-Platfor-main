@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }) => {
   const [deliveryUpdates, setDeliveryUpdates] = useState({});
   
   const user = useSelector((state) => state?.user?.user);
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('accesstoken') || localStorage.getItem('token');
 
   useEffect(() => {
     if (user && token) {

@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }) => {
   const [deliveryUpdates, setDeliveryUpdates] = useState({});
   const [liveDeliveries, setLiveDeliveries] = useState({});
   
-  const user = useSelector((state) => state?.user?.user);
+  const user = useSelector((state) => state?.user);
   const token = sessionStorage.getItem('accesstoken') || localStorage.getItem('token');
 
   useEffect(() => {

@@ -18,7 +18,7 @@ const DeliveryTracker = ({ order }) => {
         setDeliveryStatus(update);
       }
     }
-  }, [order, joinOrderTracking, getDeliveryUpdate]);
+  }, [order, joinOrderTracking, getDeliveryUpdate, isConnected]);
 
   // Listen for real-time updates
   useEffect(() => {

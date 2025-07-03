@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useSelector } from 'react-redux';
+import { useEffect as useDebugEffect } from 'react';
 
 const SocketContext = createContext();
 
@@ -19,10 +20,19 @@ export const SocketProvider = ({ children }) => {
   const [liveDeliveries, setLiveDeliveries] = useState({});
   
   const user = useSelector((state) => state?.user);
+
+  // Log Redux user state whenever it changes
+  useDebugEffect(() => {
+    console.log('[DEBUG][REDUX] user slice updated:', user);
+  }, [user]);
+
   const token = sessionStorage.getItem('accesstoken') || localStorage.getItem('token');
+
+  console.log('[DEBUG][TOKEN]', token ? 'Token present' : 'No token');
 
   useEffect(() => {
     if (user && token) {
+      console.log('[DEBUG][SOCKET] Initializing socket. App role:', user.role);
       // Map application roles to socket userType labels expected by backend
       const roleToUserType = {
         'ADMIN': 'admin',
@@ -42,12 +52,12 @@ export const SocketProvider = ({ children }) => {
 
       // Connection event handlers
       socketInstance.on('connect', () => {
-        console.log('✅ Connected to delivery tracking server');
+        console.log('✅ Connected to delivery tracking server. Socket ID:', socketInstance.id);
         setIsConnected(true);
       });
 
-      socketInstance.on('disconnect', () => {
-        console.log('❌ Disconnected from delivery tracking server');
+      socketInstance.on('disconnect', (reason) => {
+        console.log('❌ Disconnected from delivery tracking server. Reason:', reason);
         setIsConnected(false);
       });
 
@@ -213,6 +223,11 @@ export const SocketProvider = ({ children }) => {
         }));
       });
 
+      // Log every incoming event for debugging
+      socketInstance.onAny((event, ...args) => {
+        console.log('[SOCKET][EVENT]', event, args);
+      });
+
       setSocket(socketInstance);
 
       // Cleanup on unmount
@@ -228,21 +243,21 @@ export const SocketProvider = ({ children }) => {
   const joinOrderTracking = (orderId) => {
     if (socket && isConnected) {
       socket.emit('join_order_tracking', orderId);
-      console.log(`👀 Joined tracking for order: ${orderId}`);
+      console.log(`[SOCKET] emit join_order_tracking ->`, orderId);
     }
   };
 
   const leaveOrderTracking = (orderId) => {
     if (socket && isConnected) {
       socket.emit('leave_order_tracking', orderId);
-      console.log(`👋 Left tracking for order: ${orderId}`);
+      console.log(`[SOCKET] emit leave_order_tracking ->`, orderId);
     }
   };
 
   const requestDeliveryUpdate = (orderId) => {
     if (socket && isConnected) {
       socket.emit('request_delivery_update', orderId);
-      console.log(`🔄 Requested delivery update for order: ${orderId}`);
+      console.log(`[SOCKET] emit request_delivery_update ->`, orderId);
     }
   };
 

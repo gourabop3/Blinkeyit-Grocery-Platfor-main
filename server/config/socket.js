@@ -26,6 +26,8 @@ const initializeSocket = (server) => {
       const token = socket.handshake.auth.token;
       const userType = socket.handshake.auth.userType; // 'customer', 'partner', or 'admin'
       
+      console.log('[DEBUG][SOCKET][AUTH] Incoming connection attempt', { userType });
+
       if (!token) {
         return next(new Error("Authentication error: No token provided"));
       }
@@ -33,6 +35,7 @@ const initializeSocket = (server) => {
       const decoded = jwt.verify(token, process.env.SECRET_KEY_JWT);
       
       if (userType === 'partner') {
+        console.log('[DEBUG][SOCKET][AUTH] Verifying partner token');
         const partner = await DeliveryPartnerModel.findById(decoded.id);
         if (!partner) {
           return next(new Error("Authentication error: Partner not found"));
@@ -41,6 +44,7 @@ const initializeSocket = (server) => {
         socket.userType = 'partner';
         socket.user = partner;
       } else if (userType === 'customer') {
+        console.log('[DEBUG][SOCKET][AUTH] Verifying customer token');
         const user = await UserModel.findById(decoded.id);
         if (!user) {
           return next(new Error("Authentication error: User not found"));
@@ -49,11 +53,12 @@ const initializeSocket = (server) => {
         socket.userType = 'customer';
         socket.user = user;
       } else if (userType === 'admin') {
-        // Admin authentication logic
+        console.log('[DEBUG][SOCKET][AUTH] Admin connection');
         socket.userId = decoded.id;
         socket.userType = 'admin';
       }
       
+      console.log('[DEBUG][SOCKET][AUTH] Authenticated', { userType: socket.userType, userId: socket.userId });
       next();
     } catch (error) {
       console.log("Socket authentication error:", error.message);
@@ -62,7 +67,7 @@ const initializeSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(`${socket.userType} connected:`, socket.userId);
+    console.log(`[DEBUG][SOCKET] ${socket.userType} connected ->`, socket.userId, 'SocketID:', socket.id);
 
     // Store connection based on user type
     if (socket.userType === 'customer') {
@@ -80,6 +85,7 @@ const initializeSocket = (server) => {
 
     // Join room for order tracking
     socket.on("join_order_tracking", (orderId) => {
+      console.log('[DEBUG][SOCKET] join_order_tracking', { socketId: socket.id, orderId });
       socket.join(`order_${orderId}`);
       
       if (!orderTracking.has(orderId)) {
@@ -92,6 +98,7 @@ const initializeSocket = (server) => {
 
     // Leave order tracking
     socket.on("leave_order_tracking", (orderId) => {
+      console.log('[DEBUG][SOCKET] leave_order_tracking', { socketId: socket.id, orderId });
       socket.leave(`order_${orderId}`);
       
       if (orderTracking.has(orderId)) {

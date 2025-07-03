@@ -4,6 +4,7 @@ const CartProductModel = require("../models/cartProduct.model.js");
 const OrderModel = require("../models/order.model.js");
 const UserModel = require("../models/user.model.js");
 const ProductModel = require("../models/product.model.js");
+const { awardPurchasePointsController } = require("./loyalty.controller.js");
 
 // Direct cart clearing controller
 const clearCartController = async (request, response) => {
@@ -101,6 +102,13 @@ const CashOnDeliveryOrderController = async (request, response) => {
       { _id: userId },
       { shopping_cart: [] }
     );
+
+    // Award loyalty points for COD order
+    try {
+      await awardPurchasePointsController(generatedOrder._id);
+    } catch (pointsError) {
+      console.error("Error awarding loyalty points:", pointsError);
+    }
 
     return response.json({
       message: "Order successfully",
@@ -273,13 +281,20 @@ const webhookStripe = async (request, response) => {
                 shopping_cart: [],
               });
               
-              console.log("Cart cleared successfully:", {
-                removedItems: removeCartItems.deletedCount,
-                userUpdated: !!updateInUser
-              });
-            } catch (clearError) {
-              console.error("Error clearing cart in webhook:", clearError);
-            }
+                           console.log("Cart cleared successfully:", {
+               removedItems: removeCartItems.deletedCount,
+               userUpdated: !!updateInUser
+             });
+           } catch (clearError) {
+             console.error("Error clearing cart in webhook:", clearError);
+           }
+
+           // Award loyalty points for online payment
+           try {
+             await awardPurchasePointsController(updatedOrder._id);
+           } catch (pointsError) {
+             console.error("Error awarding loyalty points in webhook:", pointsError);
+           }
           } else {
             console.error("Order not found for ID:", orderId);
           }

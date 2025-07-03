@@ -15,6 +15,10 @@ const cartRouter = require("./routes/cart.route");
 const addressRouter = require("./routes/address.route");
 const orderRouter = require("./routes/order.route");
 const dashboardRouter = require("./routes/dashboard.route");
+// New interactive features
+const reviewRouter = require("./routes/review.route");
+const wishlistRouter = require("./routes/wishlist.route");
+const loyaltyRouter = require("./routes/loyalty.route");
 
 const PORT = process.env.PORT || 5000;
 
@@ -86,6 +90,10 @@ app.use("/api/cart", cartRouter);
 app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/dashboard", dashboardRouter);
+// New interactive features
+app.use("/api/review", reviewRouter);
+app.use("/api/wishlist", wishlistRouter);
+app.use("/api/loyalty", loyaltyRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

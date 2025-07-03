@@ -158,6 +158,69 @@ const SummaryApi = {
         url: "/api/order/verify-payment",
         method: "post"
     },
+    
+    // Review APIs
+    createReview: {
+        url: "/api/review/create",
+        method: "post"
+    },
+    getProductReviews: {
+        url: "/api/review/product",
+        method: "get"
+    },
+    markReviewHelpful: {
+        url: "/api/review/helpful",
+        method: "post"
+    },
+    getUserReviews: {
+        url: "/api/review/user/reviews",
+        method: "get"
+    },
+
+    // Wishlist APIs
+    addToWishlist: {
+        url: "/api/wishlist/add",
+        method: "post"
+    },
+    removeFromWishlist: {
+        url: "/api/wishlist/remove",
+        method: "delete"
+    },
+    getWishlist: {
+        url: "/api/wishlist",
+        method: "get"
+    },
+    updateWishlistItem: {
+        url: "/api/wishlist/update",
+        method: "put"
+    },
+    checkWishlist: {
+        url: "/api/wishlist/check",
+        method: "get"
+    },
+    moveWishlistToCart: {
+        url: "/api/wishlist/move-to-cart",
+        method: "post"
+    },
+
+    // Loyalty APIs
+    getLoyaltySummary: {
+        url: "/api/loyalty/summary",
+        method: "get"
+    },
+    getLoyaltyHistory: {
+        url: "/api/loyalty/history",
+        method: "get"
+    },
+    redeemPoints: {
+        url: "/api/loyalty/redeem",
+        method: "post"
+    },
+    awardReferralPoints: {
+        url: "/api/loyalty/referral-reward",
+        method: "post"
+    },
+
     payment_url: {
     url: "/api/order/checkout",
     method: "post",

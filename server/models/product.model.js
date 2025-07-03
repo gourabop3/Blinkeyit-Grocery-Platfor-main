@@ -66,6 +66,60 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Review and rating aggregation
+    reviews: {
+      totalReviews: {
+        type: Number,
+        default: 0,
+      },
+      averageRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5,
+      },
+      ratingDistribution: {
+        1: { type: Number, default: 0 },
+        2: { type: Number, default: 0 },
+        3: { type: Number, default: 0 },
+        4: { type: Number, default: 0 },
+        5: { type: Number, default: 0 },
+      },
+    },
+    // Additional product metadata
+    tags: {
+      type: [String],
+      default: [],
+    },
+    dietary: {
+      type: [String],
+      enum: ["vegan", "vegetarian", "gluten-free", "organic", "dairy-free", "low-fat", "sugar-free"],
+      default: [],
+    },
+    brand: {
+      type: String,
+      default: "",
+    },
+    nutrition: {
+      calories: { type: Number, default: 0 },
+      protein: { type: Number, default: 0 },
+      carbs: { type: Number, default: 0 },
+      fat: { type: Number, default: 0 },
+      fiber: { type: Number, default: 0 },
+      sugar: { type: Number, default: 0 },
+    },
+    views: {
+      type: Number,
+      default: 0,
+    },
+    sales: {
+      type: Number,
+      default: 0,
+    },
+    lastRestocked: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

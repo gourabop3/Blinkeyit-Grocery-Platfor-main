@@ -159,7 +159,9 @@ const initializeSocket = (server) => {
                 heading,
                 distanceToCustomer: distanceKm,
                 estimatedArrival: eta,
-                route: tracking.route.map(p => [p.latitude, p.longitude])
+                route: tracking.route.map(p => [p.latitude, p.longitude]),
+                storeLocation: tracking.storeLocation,
+                customerLocation: tracking.customerLocation,
               });
 
               // Additionally, notify all connected admin sockets so admin dashboard can display live updates
@@ -173,7 +175,9 @@ const initializeSocket = (server) => {
                     heading,
                     distanceToCustomer: distanceKm,
                     estimatedArrival: eta,
-                    route: tracking.route.map(p => [p.latitude, p.longitude])
+                    route: tracking.route.map(p => [p.latitude, p.longitude]),
+                    storeLocation: tracking.storeLocation,
+                    customerLocation: tracking.customerLocation,
                   });
                 }
               });

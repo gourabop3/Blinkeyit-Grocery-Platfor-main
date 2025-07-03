@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -32,6 +32,8 @@ const DeliveryMap = ({ partnerLocation, customerLocation }) => {
 
   const center = partnerLatLng || customerLatLng;
 
+  const routePositions = partnerLatLng && customerLatLng ? [partnerLatLng, customerLatLng] : null;
+
   return (
     <div className="w-full h-64 rounded-lg overflow-hidden mb-6 shadow">
       <MapContainer
@@ -56,6 +58,8 @@ const DeliveryMap = ({ partnerLocation, customerLocation }) => {
             <Popup>Delivery Partner</Popup>
           </Marker>
         )}
+
+        {routePositions && <Polyline positions={routePositions} color="blue" />}
       </MapContainer>
     </div>
   );

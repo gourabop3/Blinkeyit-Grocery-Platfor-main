@@ -4,6 +4,8 @@ import { useSocket } from '../context/SocketContext';
 import SummaryApi from '../common/SummaryApi';
 import toast from 'react-hot-toast';
 import DeliveryMap from '../components/DeliveryMap';
+import StatusBadge from '../components/StatusBadge';
+import OrderTimeline from '../components/OrderTimeline';
 
 const TrackOrder = () => {
   const { orderId } = useParams();
@@ -291,16 +293,25 @@ const TrackOrder = () => {
           </div>
         </div>
 
-        {/* Connection Status */}
-        <div className="mb-4">
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+        {/* Top Badges */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <StatusBadge status={trackingData.status} />
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs ${
             isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            <div className={`w-2 h-2 rounded-full mr-2 ${
+            <div className={`w-2 h-2 rounded-full mr-1 ${
               isConnected ? 'bg-green-500' : 'bg-red-500'
             }`}></div>
-            {isConnected ? 'Live Tracking Active' : 'Connection Lost'}
+            {isConnected ? 'Live' : 'Offline'}
           </div>
+          {trackingData.liveUpdates?.distanceToCustomer && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+              {trackingData.liveUpdates.distanceToCustomer.toFixed(1)} km away
+            </span>
+          )}
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+            ETA {getEstimatedArrival()}
+          </span>
         </div>
 
         {/* Current Status Card */}
@@ -373,27 +384,43 @@ const TrackOrder = () => {
         {trackingData.deliveryPartnerId && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Partner</h3>
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 mr-4">
-                👤
-              </div>
+            <div className="flex items-center gap-4">
+              {/* Avatar */}
+              {trackingData.deliveryPartnerId.photoUrl ? (
+                <img
+                  src={trackingData.deliveryPartnerId.photoUrl}
+                  alt="Partner avatar"
+                  className="w-14 h-14 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center text-2xl">👤</div>
+              )}
+
               <div className="flex-1">
-                <div className="font-semibold text-gray-900">{trackingData.deliveryPartnerId.name}</div>
-                <div className="text-gray-600">{trackingData.deliveryPartnerId.mobile}</div>
+                <div className="font-semibold text-gray-900 flex items-center gap-1">
+                  {trackingData.deliveryPartnerId.name}
+                  {/* Rating */}
+                  {trackingData.deliveryPartnerId.statistics?.avgRating && (
+                    <span className="text-yellow-500 text-sm">⭐ {trackingData.deliveryPartnerId.statistics.avgRating.toFixed(1)}</span>
+                  )}
+                </div>
+                <div className="text-gray-600 text-sm">{trackingData.deliveryPartnerId.mobile}</div>
                 {trackingData.deliveryPartnerId.vehicleDetails && (
-                  <div className="text-sm text-gray-500 capitalize">
+                  <div className="text-xs text-gray-500 capitalize mt-0.5">
                     {trackingData.deliveryPartnerId.vehicleDetails.type} • {trackingData.deliveryPartnerId.vehicleDetails.plateNumber}
                   </div>
                 )}
               </div>
-              <div className="text-right">
-                <div className="flex items-center text-yellow-500">
-                  ⭐ {trackingData.deliveryPartnerId.statistics?.avgRating?.toFixed(1) || 'New'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {trackingData.deliveryPartnerId.statistics?.totalDeliveries || 0} deliveries
-                </div>
-              </div>
+
+              {/* Call button */}
+              {trackingData.deliveryPartnerId.mobile && (
+                <a
+                  href={`tel:${trackingData.deliveryPartnerId.mobile}`}
+                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  📞 Call
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -401,33 +428,7 @@ const TrackOrder = () => {
         {/* Delivery Timeline */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Timeline</h3>
-          <div className="space-y-4">
-            {trackingData.timeline?.map((event, index) => {
-              const eventStatus = statusConfig[event.status] || statusConfig.assigned;
-              const isCompleted = index < trackingData.timeline.length - 1 || trackingData.status === event.status;
-              
-              return (
-                <div key={index} className="flex items-start">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                    isCompleted ? eventStatus.color + ' text-white' : 'bg-gray-200 text-gray-500'
-                  }`}>
-                    {eventStatus.icon}
-                  </div>
-                  <div className="ml-4 flex-1 min-w-0">
-                    <div className={`font-medium ${isCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
-                      {eventStatus.label}
-                    </div>
-                    {event.notes && (
-                      <div className="text-sm text-gray-600 mt-1">{event.notes}</div>
-                    )}
-                    <div className="text-xs text-gray-500 mt-1">
-                      {formatDate(event.timestamp)} at {formatTime(event.timestamp)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <OrderTimeline timeline={trackingData.timeline} currentStatus={trackingData.status} />
         </div>
 
         {/* Order Details */}

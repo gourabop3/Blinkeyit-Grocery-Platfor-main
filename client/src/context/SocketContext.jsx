@@ -246,25 +246,58 @@ export const SocketProvider = ({ children }) => {
     const fetchActiveDeliveries = async () => {
       try {
         if (user?.role !== 'ADMIN') return;
+        console.log('[ADMIN] Fetching active deliveries...');
         const response = await Axios({ ...SummaryApi.getAllActiveDeliveries });
+        console.log('[ADMIN] API response:', response.data);
+        
         if (response.data.success) {
           const deliveriesArr = response.data.data.deliveries || [];
+          console.log('[ADMIN] Processing deliveries:', deliveriesArr.length);
+          
           const mapped = {};
           deliveriesArr.forEach(del => {
+            // Include all active deliveries, not just those with location updates
+            const orderId = del.orderId?._id || del.orderId;
+            
+            // Use customer location or store location as fallback if no live location
+            let location = null;
             if (del.lastLocationUpdate && del.lastLocationUpdate.latitude) {
-              mapped[del.orderId?._id || del.orderId] = {
-                orderId: del.orderId?._id || del.orderId,
+              location = {
+                latitude: del.lastLocationUpdate.latitude,
+                longitude: del.lastLocationUpdate.longitude,
+              };
+            } else if (del.customerLocation && del.customerLocation.latitude) {
+              location = {
+                latitude: del.customerLocation.latitude,
+                longitude: del.customerLocation.longitude,
+              };
+            } else if (del.storeLocation && del.storeLocation.latitude) {
+              location = {
+                latitude: del.storeLocation.latitude,
+                longitude: del.storeLocation.longitude,
+              };
+            } else {
+              // Default location (you can change these coordinates)
+              location = {
+                latitude: 12.9716,
+                longitude: 77.5946,
+              };
+            }
+            
+            if (location) {
+              mapped[orderId] = {
+                orderId: orderId,
                 status: del.status,
-                location: {
-                  latitude: del.lastLocationUpdate.latitude,
-                  longitude: del.lastLocationUpdate.longitude,
-                },
+                location: location,
                 distanceToCustomer: del.metrics?.distanceToCustomer,
                 estimatedArrival: del.metrics?.estimatedDeliveryTime,
                 route: del.route?.map(pt => [pt.latitude, pt.longitude]) || [],
+                partnerName: del.deliveryPartnerId?.name || 'Unknown Partner',
               };
             }
           });
+          
+          console.log('[ADMIN] Mapped deliveries:', mapped);
           setLiveDeliveries(mapped);
         }
       } catch (err) {

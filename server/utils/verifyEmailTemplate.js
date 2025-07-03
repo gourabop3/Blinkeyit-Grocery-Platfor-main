@@ -3,7 +3,7 @@ const verifyEmailTemplate = ({ name, url }) => {
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
       <p>Dear <strong>${name}</strong>,</p>
 
-      <p>Thank you for registering on <strong>Binkeyit</strong>! We're excited to have you on board.</p>
+      <p>Thank you for registering on <strong>Grocery</strong>! We're excited to have you on board.</p>
 
       <p>Please click the button below to verify your email address:</p>
 
@@ -22,9 +22,9 @@ const verifyEmailTemplate = ({ name, url }) => {
         Verify Email
       </a>
 
-      <p>If you didn’t sign up for Binkeyit, you can safely ignore this email.</p>
+      <p>If you didn't sign up for Grocery, you can safely ignore this email.</p>
 
-      <p>Cheers,<br/>The Binkeyit Team</p>
+      <p>Cheers,<br/>The Grocery Team</p>
     </div>
   `;
 };

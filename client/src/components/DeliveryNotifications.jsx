@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const DeliveryNotifications = () => {
   const { isConnected, deliveryUpdates } = useSocket();

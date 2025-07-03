@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import SummaryApi from '../common/SummaryApi';
 import toast from 'react-hot-toast';
+import DeliveryMap from '../components/DeliveryMap';
 
 const TrackOrder = () => {
   const { orderId } = useParams();
@@ -360,6 +361,12 @@ const TrackOrder = () => {
               </div>
             </div>
           )}
+
+          {/* Map - Real-time location */}
+          <DeliveryMap
+            partnerLocation={liveLocation || trackingData.currentLocation}
+            customerLocation={trackingData.customerLocation}
+          />
         </div>
 
         {/* Delivery Partner Info */}

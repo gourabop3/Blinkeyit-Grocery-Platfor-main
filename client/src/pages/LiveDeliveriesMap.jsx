@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -26,6 +26,11 @@ const FitBounds = ({ positions }) => {
 const LiveDeliveriesMap = () => {
   const { liveDeliveries } = useSocket();
   const orders = Object.values(liveDeliveries);
+
+  // Debug: log whenever liveDeliveries changes
+  useEffect(() => {
+    console.log('[ADMIN][LIVE] liveDeliveries updated. Count =', orders.length, liveDeliveries);
+  }, [liveDeliveries]);
 
   if (!orders.length) return (
     <div className="p-6"><h1 className="text-xl font-semibold">No active deliveries</h1></div>

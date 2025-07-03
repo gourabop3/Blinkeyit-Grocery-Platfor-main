@@ -19,12 +19,14 @@ const getTrackingByOrderController = async (request, response) => {
       });
     }
 
-    if (order.userId.toString() !== userId && request.userRole !== 'admin') {
-      return response.status(403).json({
-        message: "Unauthorized access to order tracking",
-        error: true,
-        success: false,
-      });
+    if(userId) {
+      if (order.userId.toString() !== userId && request.userRole !== 'admin') {
+        return response.status(403).json({
+          message: "Unauthorized access to order tracking",
+          error: true,
+          success: false,
+        });
+      }
     }
 
     const tracking = await DeliveryTrackingModel.findOne({ orderId })
@@ -97,14 +99,15 @@ const getLiveLocationController = async (request, response) => {
     const { orderId } = request.params;
     const userId = request.userId;
 
-    // Verify user owns this order
-    const order = await OrderModel.findById(orderId);
-    if (!order || order.userId.toString() !== userId) {
-      return response.status(403).json({
-        message: "Unauthorized access",
-        error: true,
-        success: false,
-      });
+    if(userId) {
+      const order = await OrderModel.findById(orderId);
+      if (!order || order.userId.toString() !== userId) {
+        return response.status(403).json({
+          message: "Unauthorized access",
+          error: true,
+          success: false,
+        });
+      }
     }
 
     const tracking = await DeliveryTrackingModel.findOne({ orderId })

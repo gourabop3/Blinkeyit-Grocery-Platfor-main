@@ -546,7 +546,7 @@ const updateOrderStatusController = async (request, response) => {
     const newIndex = flow.indexOf(order_status);
 
     // Allow cancel anytime
-    if(order_status !== "Cancelled" && (newIndex === -1 || newIndex < currentIndex || newIndex-currentIndex>1)) {
+    if(order_status !== "Cancelled" && (newIndex === -1 || newIndex < currentIndex)) {
       return response.status(400).json({
         message: `Invalid transition from ${current} to ${order_status}`,
         error: true,

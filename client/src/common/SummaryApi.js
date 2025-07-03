@@ -154,6 +154,10 @@ const SummaryApi = {
         url: "/api/order/clear-cart",
         method: "post"
     },
+    verifyPayment: {
+        url: "/api/order/verify-payment",
+        method: "post"
+    },
     payment_url: {
     url: "/api/order/checkout",
     method: "post",

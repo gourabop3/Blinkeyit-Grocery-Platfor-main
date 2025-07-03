@@ -15,6 +15,30 @@ const Success = () => {
   const hasProcessed = useRef(false) // Flag to prevent multiple executions
   const hasShownToast = useRef(false) // Flag to prevent multiple toasts
 
+  // Payment verification function
+  const verifyPayment = async (sessionId) => {
+    try {
+      console.log("Verifying payment for session:", sessionId);
+      const response = await Axios({
+        ...SummaryApi.verifyPayment,
+        data: { sessionId }
+      });
+      
+      const { data: responseData } = response;
+      
+      if (responseData.success) {
+        console.log("Payment verified successfully:", responseData.data);
+        return true;
+      } else {
+        console.error("Payment verification failed:", responseData.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error verifying payment:", error);
+      return false;
+    }
+  }
+
   // Direct cart clearing function
   const clearCartDirectly = async () => {
     try {
@@ -79,11 +103,22 @@ const Success = () => {
           hasShownToast.current = true
         }
         
-        // Add a delay to ensure webhook has been processed
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
         try {
-          // Clear cart directly using the new endpoint
+          let paymentVerified = false;
+          
+          // If we have a session ID, verify the payment
+          if (sessionId) {
+            console.log("Verifying payment with Stripe...")
+            paymentVerified = await verifyPayment(sessionId)
+            
+            if (paymentVerified) {
+              console.log("Payment verification successful")
+            } else {
+              console.log("Payment verification failed, but proceeding...")
+            }
+          }
+          
+          // Clear cart regardless of verification result (user sees success page)
           const cartCleared = await clearCartDirectly()
           
           if (cartCleared) {
@@ -96,7 +131,7 @@ const Success = () => {
             }
           }
           
-          // Fetch updated orders
+          // Fetch updated orders to show the new order
           if (fetchOrder) {
             await fetchOrder()
             console.log('Orders refreshed after successful payment')
@@ -108,7 +143,7 @@ const Success = () => {
         } catch (error) {
           console.error("Error in success payment processing:", error)
           if (!hasShownToast.current) {
-            toast.error('Payment successful, but there was an issue refreshing data. Please check your orders.')
+            toast.error('Payment successful, but there was an issue processing your order. Please check your orders or contact support.')
             hasShownToast.current = true
           }
         }

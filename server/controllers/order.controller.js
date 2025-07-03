@@ -128,7 +128,36 @@ const paymentController = async (request, response) => {
     const userId = request.userId; // auth middleware
     const { list_items, totalAmt, addressId, subTotalAmt } = request.body;
 
+    console.log("Creating online payment order for user:", userId);
+    console.log("Cart items:", list_items.length);
+
     const user = await UserModel.findById(userId);
+
+    // Create order immediately (before Stripe session)
+    const orderId = `ORD-${new mongoose.Types.ObjectId()}`;
+    
+    const productsPayload = list_items.map((el) => ({
+      productId: el.productId._id,
+      quantity: el.quantity || 1,
+      product_details: {
+        name: el.productId.name,
+        image: el.productId.image,
+      },
+    }));
+
+    const orderDoc = new OrderModel({
+      userId,
+      orderId,
+      products: productsPayload,
+      paymentId: "", // Will be updated by webhook
+      payment_status: "PENDING", // Initial status
+      delivery_address: addressId,
+      subTotalAmt,
+      totalAmt,
+    });
+
+    const savedOrder = await orderDoc.save();
+    console.log("Order created with ID:", savedOrder._id);
 
     const line_items = list_items.map((item) => {
       return {
@@ -161,6 +190,7 @@ const paymentController = async (request, response) => {
       metadata: {
         userId: userId,
         addressId: addressId,
+        orderId: savedOrder._id.toString(), // Include the order ID in metadata
       },
       line_items: line_items,
       success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -169,8 +199,16 @@ const paymentController = async (request, response) => {
 
     const session = await Stripe.checkout.sessions.create(params);
 
+    // Update order with session ID
+    await OrderModel.findByIdAndUpdate(savedOrder._id, {
+      paymentId: session.id,
+    });
+
+    console.log("Stripe session created:", session.id);
+
     return response.status(200).json(session);
   } catch (error) {
+    console.error("Error in payment controller:", error);
     return response.status(500).json({
       message: error.message || error,
       error: true,
@@ -179,123 +217,149 @@ const paymentController = async (request, response) => {
   }
 };
 
-const getOrderProductItems = async ({
-  lineItems,
-  userId,
-  addressId,
-  paymentId,
-  payment_status,
-}) => {
-  const products = [];
-  let subTotal = 0;
+// Webhook handler - now just updates order status
+const webhookStripe = async (request, response) => {
+  try {
+    const event = request.body;
+    console.log("Stripe webhook event:", event.type);
 
-  if (lineItems?.data?.length) {
-    for (const item of lineItems.data) {
-      const product = await Stripe.products.retrieve(item.price.product);
-
-      products.push({
-        productId: product.metadata.productId,
-        quantity: item.quantity,
-        product_details: {
-          name: product.name,
-          image: product.images,
-        },
-      });
-
-      subTotal += Number(item.amount_total / 100);
-    }
-
-    // After iterating, reduce stock in DB
-    try {
-      const stockOps = [];
-      for (const li of lineItems.data) {
-        const prod = await Stripe.products.retrieve(li.price.product);
-        if (prod?.metadata?.productId) {
-          stockOps.push({
-            updateOne: {
-              filter: { _id: prod.metadata.productId },
-              update: { $inc: { stock: -li.quantity || -1 } },
+    switch (event.type) {
+      case "checkout.session.completed":
+        const session = event.data.object;
+        const userId = session.metadata.userId;
+        const orderId = session.metadata.orderId;
+        
+        console.log("Payment completed for user:", userId);
+        console.log("Order ID from metadata:", orderId);
+        
+        if (orderId) {
+          // Update existing order
+          const updatedOrder = await OrderModel.findByIdAndUpdate(
+            orderId,
+            {
+              payment_status: "PAID",
+              paymentId: session.payment_intent || session.id,
             },
-          });
+            { new: true }
+          );
+          
+          if (updatedOrder) {
+            console.log("Order updated successfully:", updatedOrder.orderId);
+            
+            // Decrement stock for ordered products
+            try {
+              const stockOps = updatedOrder.products.map((item) => ({
+                updateOne: {
+                  filter: { _id: item.productId },
+                  update: { $inc: { stock: -item.quantity } },
+                },
+              }));
+              
+              if (stockOps.length) {
+                await ProductModel.bulkWrite(stockOps, { ordered: false });
+                console.log("Stock updated for", stockOps.length, "products");
+              }
+            } catch (stockErr) {
+              console.error("Failed to update product stock:", stockErr.message);
+            }
+            
+            // Clear cart
+            try {
+              const removeCartItems = await CartProductModel.deleteMany({
+                userId: userId,
+              });
+              
+              const updateInUser = await UserModel.findByIdAndUpdate(userId, {
+                shopping_cart: [],
+              });
+              
+              console.log("Cart cleared successfully:", {
+                removedItems: removeCartItems.deletedCount,
+                userUpdated: !!updateInUser
+              });
+            } catch (clearError) {
+              console.error("Error clearing cart in webhook:", clearError);
+            }
+          } else {
+            console.error("Order not found for ID:", orderId);
+          }
+        } else {
+          console.error("No orderId in session metadata");
         }
-      }
-
-      if (stockOps.length) await ProductModel.bulkWrite(stockOps, { ordered: false });
-    } catch (e) {
-      console.error("[Stripe] Failed to update stock:", e.message);
+        break;
+        
+      case "checkout.session.expired":
+        // Handle expired sessions
+        const expiredSession = event.data.object;
+        const expiredOrderId = expiredSession.metadata.orderId;
+        
+        if (expiredOrderId) {
+          await OrderModel.findByIdAndUpdate(expiredOrderId, {
+            payment_status: "FAILED",
+          });
+          console.log("Order marked as failed due to expired session:", expiredOrderId);
+        }
+        break;
+        
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
     }
+
+    response.json({ received: true });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    response.status(500).json({ error: "Webhook handler failed" });
   }
-
-  const orderDoc = new OrderModel({
-    userId,
-    orderId: `ORD-${new mongoose.Types.ObjectId()}`,
-    products,
-    paymentId,
-    payment_status,
-    delivery_address: addressId,
-    subTotalAmt: subTotal,
-    totalAmt: subTotal,
-  });
-
-  await orderDoc.save();
-
-  return orderDoc;
 };
 
-//http://localhost:8080/api/order/webhook
-const webhookStripe = async (request, response) => {
-  const event = request.body;
-  const endPointSecret = process.env.STRIPE_ENPOINT_WEBHOOK_SECRET_KEY;
-
-  console.log("Stripe webhook event:", event.type);
-
-  // Handle the event
-  switch (event.type) {
-    case "checkout.session.completed":
-      const session = event.data.object;
-      const lineItems = await Stripe.checkout.sessions.listLineItems(
-        session.id
-      );
-      const userId = session.metadata.userId;
+// Add a controller to manually verify and update order status
+const verifyPaymentController = async (request, response) => {
+  try {
+    const { sessionId } = request.body;
+    const userId = request.userId;
+    
+    console.log("Verifying payment for session:", sessionId);
+    
+    // Retrieve the session from Stripe
+    const session = await Stripe.checkout.sessions.retrieve(sessionId);
+    
+    if (session && session.payment_status === "paid") {
+      const orderId = session.metadata.orderId;
       
-      console.log("Processing successful payment for user:", userId);
-      
-      const orderDoc = await getOrderProductItems({
-        lineItems,
-        userId,
-        addressId: session.metadata.addressId,
-        paymentId: session.payment_intent,
-        payment_status: "PAID", // Set to PAID for successful online payments
-      });
-
-      if (orderDoc) {
-        console.log("Order created successfully, clearing cart...");
+      if (orderId) {
+        const updatedOrder = await OrderModel.findByIdAndUpdate(
+          orderId,
+          {
+            payment_status: "PAID",
+            paymentId: session.payment_intent || session.id,
+          },
+          { new: true }
+        ).populate("delivery_address");
         
-        // Clear cart - more robust clearing
-        try {
-          const removeCartItems = await CartProductModel.deleteMany({
-            userId: userId,
-          });
-          
-          const updateInUser = await UserModel.findByIdAndUpdate(userId, {
-            shopping_cart: [],
-          });
-          
-          console.log("Cart cleared successfully:", {
-            removedItems: removeCartItems.deletedCount,
-            userUpdated: !!updateInUser
-          });
-        } catch (clearError) {
-          console.error("Error clearing cart in webhook:", clearError);
-        }
+        console.log("Payment verified and order updated:", updatedOrder.orderId);
+        
+        return response.json({
+          message: "Payment verified successfully",
+          error: false,
+          success: true,
+          data: updatedOrder,
+        });
       }
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
+    }
+    
+    return response.status(400).json({
+      message: "Payment verification failed",
+      error: true,
+      success: false,
+    });
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
   }
-
-  // Return a response to acknowledge receipt of the event
-  response.json({ received: true });
 };
 
 const getOrderDetailsController = async (request, response) => {
@@ -306,6 +370,8 @@ const getOrderDetailsController = async (request, response) => {
       .sort({ createdAt: -1 })
       .populate("delivery_address");
 
+    console.log(`Found ${orderlist.length} orders for user ${userId}`);
+
     return response.json({
       message: "order list",
       data: orderlist,
@@ -313,6 +379,7 @@ const getOrderDetailsController = async (request, response) => {
       success: true,
     });
   } catch (error) {
+    console.error("Error fetching orders:", error);
     return response.status(500).json({
       message: error.message || error,
       error: true,
@@ -371,6 +438,8 @@ const getAllOrdersController = async (request, response) => {
       customerName: order.userId?.name || "Unknown Customer",
       customerEmail: order.userId?.email || "Unknown Email"
     }));
+    
+    console.log(`Admin fetched ${formattedOrders.length} orders (total: ${totalOrders})`);
     
     return response.json({
       message: "Orders fetched successfully",
@@ -455,4 +524,5 @@ module.exports = {
   getAllOrdersController,
   updateOrderStatusController,
   clearCartController,
+  verifyPaymentController,
 };

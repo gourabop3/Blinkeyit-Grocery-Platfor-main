@@ -11,6 +11,7 @@ const {
   getAllOrdersController,
   updateOrderStatusController,
   clearCartController,
+  verifyPaymentController,
 } = require("../controllers/order.controller.js");
 
 router.post("/cash-on-delivery", auth, CashOnDeliveryOrderController);
@@ -18,6 +19,7 @@ router.post("/checkout", auth, paymentController);
 router.post("/webhook", webhookStripe);
 router.get("/order-list", auth, getOrderDetailsController);
 router.post("/clear-cart", auth, clearCartController);
+router.post("/verify-payment", auth, verifyPaymentController);
 
 // Admin order management routes
 router.get("/admin/all-orders", auth, admin, getAllOrdersController);

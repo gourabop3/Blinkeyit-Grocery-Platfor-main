@@ -22,6 +22,7 @@ import NewAdminDashboard from "../pages/NewAdminDashboard";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import AdminDiagnostic from "../pages/AdminDiagnostic";
+import LiveDeliveriesMap from "../pages/LiveDeliveriesMap";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -153,7 +154,7 @@ const router = createBrowserRouter([
           },
           {
             path: "delivery-tracking",
-            element: <div className="p-6"><h1 className="text-2xl font-bold">Live Deliveries</h1><p className="text-gray-600">Monitor active deliveries...</p></div>,
+            element: <LiveDeliveriesMap />,
           },
         ],
       },

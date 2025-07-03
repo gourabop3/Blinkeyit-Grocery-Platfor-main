@@ -16,6 +16,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [deliveryUpdates, setDeliveryUpdates] = useState({});
+  const [liveDeliveries, setLiveDeliveries] = useState({});
   
   const user = useSelector((state) => state?.user?.user);
   const token = sessionStorage.getItem('accesstoken') || localStorage.getItem('token');
@@ -104,8 +105,17 @@ export const SocketProvider = ({ children }) => {
             currentLocation: data.location,
             speed: data.speed,
             heading: data.heading,
+            distanceToCustomer: data.distanceToCustomer,
+            estimatedArrival: data.estimatedArrival,
+            route: data.route,
             lastLocationUpdate: data.timestamp,
           }
+        }));
+
+        // Admin live deliveries map data
+        setLiveDeliveries(prev => ({
+          ...prev,
+          [data.orderId]: data,
         }));
       });
 
@@ -252,6 +262,7 @@ export const SocketProvider = ({ children }) => {
     socket,
     isConnected,
     deliveryUpdates,
+    liveDeliveries,
     joinOrderTracking,
     leaveOrderTracking,
     requestDeliveryUpdate,

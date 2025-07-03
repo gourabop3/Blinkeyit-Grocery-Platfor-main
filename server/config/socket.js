@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const DeliveryPartnerModel = require("../models/deliveryPartner.model");
 const DeliveryTrackingModel = require("../models/deliveryTracking.model");
 const UserModel = require("../models/user.model");
+const geolib = require("geolib");
 
 let io;
 const connectedUsers = new Map(); // userId -> socketId
@@ -123,13 +124,34 @@ const initializeSocket = (server) => {
             if (tracking) {
               await tracking.addLocationUpdate(latitude, longitude, speed, heading, accuracy);
               
-              // Broadcast location to all tracking this order
-              socket.to(`order_${orderId}`).emit("delivery_location_update", {
+              // Calculate distance to customer
+              let distanceKm = null;
+              let eta = null;
+              if (tracking.customerLocation && tracking.customerLocation.latitude) {
+                const distM = geolib.getDistance(
+                  { latitude, longitude },
+                  { latitude: tracking.customerLocation.latitude, longitude: tracking.customerLocation.longitude }
+                );
+                distanceKm = distM / 1000;
+
+                const speedKmh = speed || 30; // fallback 30 km/h
+                eta = new Date(Date.now() + (distanceKm / speedKmh) * 3600 * 1000);
+
+                tracking.metrics.distanceToCustomer = distanceKm;
+                tracking.metrics.estimatedDeliveryTime = eta;
+                await tracking.save();
+              }
+
+              // Broadcast location with extras
+              io.to(`order_${orderId}`).emit("delivery_location_update", {
                 orderId,
                 location: { latitude, longitude },
                 timestamp: new Date(),
                 speed,
                 heading,
+                distanceToCustomer: distanceKm,
+                estimatedArrival: eta,
+                route: tracking.route.map(p => [p.latitude, p.longitude])
               });
             }
           }

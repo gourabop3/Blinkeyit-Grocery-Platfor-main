@@ -18,6 +18,7 @@ import {
   FiSettings,
   FiUser,
   FiLogOut,
+  FiTruck,
 } from "react-icons/fi";
 import { MdDiscount } from "react-icons/md";
 import Axios from "../utils/Axios";
@@ -106,6 +107,11 @@ const AdminLayout = () => {
       name: "App Banners",
       href: "/dashboard/admin/app-banners",
       icon: FiSmartphone,
+    },
+    {
+      name: "Live Delivery",
+      href: "/dashboard/admin/delivery-tracking",
+      icon: FiTruck,
     },
   ];
 

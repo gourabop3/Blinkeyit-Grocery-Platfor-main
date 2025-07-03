@@ -314,7 +314,7 @@ const MyOrders = () => {
                       View Details
                     </button>
                     {/* Track Order Button for trackable orders */}
-                    {['Assigned', 'Picked_up', 'In_transit'].includes(order.order_status) && (
+                    { !['Delivered','Cancelled'].includes(order.order_status) && (
                       <button
                         onClick={() => navigate(`/track/${order._id}`)}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"

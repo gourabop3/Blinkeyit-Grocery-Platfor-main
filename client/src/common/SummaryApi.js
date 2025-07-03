@@ -255,6 +255,104 @@ const SummaryApi = {
     url: "/api/order/admin/update-status",
     method: "put",
   },
+
+  // Delivery Tracking APIs
+  getDeliveryTracking: {
+    url: "/api/delivery-tracking/order/:orderId",
+    method: "get",
+  },
+  getLiveLocation: {
+    url: "/api/delivery-tracking/order/:orderId/location",
+    method: "get",
+  },
+  getDeliveryTimeline: {
+    url: "/api/delivery-tracking/order/:orderId/timeline",
+    method: "get",
+  },
+  reportDeliveryIssue: {
+    url: "/api/delivery-tracking/order/:orderId/issue",
+    method: "post",
+  },
+  submitDeliveryFeedback: {
+    url: "/api/delivery-tracking/order/:orderId/feedback",
+    method: "post",
+  },
+  verifyDeliveryOTP: {
+    url: "/api/delivery-tracking/order/:orderId/verify-otp",
+    method: "post",
+  },
+  cancelDelivery: {
+    url: "/api/delivery-tracking/order/:orderId/cancel",
+    method: "post",
+  },
+
+  // Delivery Partner APIs
+  registerDeliveryPartner: {
+    url: "/api/delivery-partner/register",
+    method: "post",
+  },
+  loginDeliveryPartner: {
+    url: "/api/delivery-partner/login",
+    method: "post",
+  },
+  getPartnerProfile: {
+    url: "/api/delivery-partner/profile",
+    method: "get",
+  },
+  updatePartnerProfile: {
+    url: "/api/delivery-partner/profile",
+    method: "put",
+  },
+  updatePartnerLocation: {
+    url: "/api/delivery-partner/location",
+    method: "post",
+  },
+  togglePartnerAvailability: {
+    url: "/api/delivery-partner/availability",
+    method: "post",
+  },
+  getActiveOrders: {
+    url: "/api/delivery-partner/orders/active",
+    method: "get",
+  },
+  acceptOrder: {
+    url: "/api/delivery-partner/orders/accept",
+    method: "post",
+  },
+  updateDeliveryStatus: {
+    url: "/api/delivery-partner/orders/status",
+    method: "post",
+  },
+  completeDelivery: {
+    url: "/api/delivery-partner/orders/complete",
+    method: "post",
+  },
+  getPartnerEarnings: {
+    url: "/api/delivery-partner/earnings",
+    method: "get",
+  },
+
+  // Admin Delivery Management APIs
+  getAllDeliveryPartners: {
+    url: "/api/delivery-partner/admin/all",
+    method: "get",
+  },
+  updatePartnerStatus: {
+    url: "/api/delivery-partner/admin/:partnerId/status",
+    method: "put",
+  },
+  autoAssignOrder: {
+    url: "/api/delivery-partner/admin/auto-assign",
+    method: "post",
+  },
+  getAllActiveDeliveries: {
+    url: "/api/delivery-tracking/admin/active",
+    method: "get",
+  },
+  getDeliveryAnalytics: {
+    url: "/api/delivery-tracking/admin/analytics",
+    method: "get",
+  },
 };
 
 export default SummaryApi;

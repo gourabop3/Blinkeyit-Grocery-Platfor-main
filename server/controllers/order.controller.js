@@ -5,6 +5,7 @@ const OrderModel = require("../models/order.model.js");
 const UserModel = require("../models/user.model.js");
 const ProductModel = require("../models/product.model.js");
 const { awardPurchasePointsController } = require("./loyalty.controller.js");
+const { autoAssignOrderController } = require("./deliveryPartner.controller.js");
 
 // Direct cart clearing controller
 const clearCartController = async (request, response) => {
@@ -108,6 +109,27 @@ const CashOnDeliveryOrderController = async (request, response) => {
       await awardPurchasePointsController(generatedOrder._id);
     } catch (pointsError) {
       console.error("Error awarding loyalty points:", pointsError);
+    }
+
+    // Auto-assign delivery partner
+    try {
+      // Create a mock request object for auto-assignment
+      const assignRequest = { body: { orderId: generatedOrder._id } };
+      const assignResponse = {
+        json: () => {},
+        status: () => ({ json: () => {} })
+      };
+      
+      // Don't wait for assignment, let it happen asynchronously
+      setTimeout(async () => {
+        try {
+          await autoAssignOrderController(assignRequest, assignResponse);
+        } catch (assignError) {
+          console.error("Error auto-assigning delivery partner:", assignError);
+        }
+      }, 2000); // 2 second delay to allow order to be fully processed
+    } catch (error) {
+      console.error("Error initiating delivery assignment:", error);
     }
 
     return response.json({

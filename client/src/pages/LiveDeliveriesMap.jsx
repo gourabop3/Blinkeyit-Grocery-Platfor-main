@@ -25,7 +25,22 @@ const FitBounds = ({ positions }) => {
 
 const LiveDeliveriesMap = () => {
   const { liveDeliveries } = useSocket();
-  const orders = Object.values(liveDeliveries);
+
+  // Normalise coordinates (support lat/lng or latitude/longitude)
+  const normaliseLocation = (loc = {}) => {
+    if (!loc) return null;
+    if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+      return { latitude: loc.latitude, longitude: loc.longitude };
+    }
+    if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+      return { latitude: loc.lat, longitude: loc.lng };
+    }
+    return null;
+  };
+
+  const orders = Object.values(liveDeliveries)
+    .map(o => ({ ...o, location: normaliseLocation(o.location) }))
+    .filter(o => o.location);
 
   // Debug: log whenever liveDeliveries changes
   useEffect(() => {

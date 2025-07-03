@@ -280,18 +280,24 @@ export const SocketProvider = ({ children }) => {
           const deliveriesArr = response.data.data.deliveries || [];
           const mapped = {};
           deliveriesArr.forEach(del => {
-            if (del.lastLocationUpdate && del.lastLocationUpdate.latitude) {
-              mapped[del.orderId?._id || del.orderId] = {
-                orderId: del.orderId?._id || del.orderId,
-                status: del.status,
-                location: {
-                  latitude: del.lastLocationUpdate.latitude,
-                  longitude: del.lastLocationUpdate.longitude,
-                },
-                distanceToCustomer: del.metrics?.distanceToCustomer,
-                estimatedArrival: del.metrics?.estimatedDeliveryTime,
-                route: del.route?.map(pt => [pt.latitude, pt.longitude]) || [],
-              };
+            if (del.lastLocationUpdate) {
+              // Support both lat/lng and latitude/longitude naming
+              const { latitude, longitude, lat, lng } = del.lastLocationUpdate;
+              const latVal = latitude ?? lat;
+              const lngVal = longitude ?? lng;
+              if (typeof latVal === 'number' && typeof lngVal === 'number') {
+                mapped[del.orderId?._id || del.orderId] = {
+                  orderId: del.orderId?._id || del.orderId,
+                  status: del.status,
+                  location: {
+                    latitude: latVal,
+                    longitude: lngVal,
+                  },
+                  distanceToCustomer: del.metrics?.distanceToCustomer,
+                  estimatedArrival: del.metrics?.estimatedDeliveryTime,
+                  route: del.route?.map(pt => [pt.latitude ?? pt.lat, pt.longitude ?? pt.lng]) || [],
+                };
+              }
             }
           });
           setLiveDeliveries(mapped);

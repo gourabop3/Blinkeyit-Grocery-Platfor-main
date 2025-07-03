@@ -25,7 +25,7 @@ const DeliveryTracker = ({ order }) => {
     if (!order?._id) return;
     const update = deliveryUpdates[order._id];
     if (update) {
-      setDeliveryStatus(update);
+      setDeliveryStatus(prev => ({ ...prev, ...update }));
     }
   }, [deliveryUpdates, order?._id]);
 

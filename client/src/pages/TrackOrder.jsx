@@ -13,7 +13,6 @@ const TrackOrder = () => {
   const { 
     joinOrderTracking, 
     leaveOrderTracking, 
-    getDeliveryUpdate,
     requestDeliveryUpdate,
     isConnected,
     deliveryUpdates
@@ -106,19 +105,24 @@ const TrackOrder = () => {
   // Listen for real-time updates coming from context
   useEffect(() => {
     const deliveryUpdate = deliveryUpdates[orderId];
-    if (deliveryUpdate) {
-      setTrackingData(prev => ({
-        ...prev,
-        status: deliveryUpdate.status,
-        partner: deliveryUpdate.partner,
-        estimatedDeliveryTime: deliveryUpdate.estimatedDeliveryTime,
-        currentLocation: deliveryUpdate.currentLocation,
-        lastUpdate: deliveryUpdate.lastUpdate,
-      }));
+    if (!deliveryUpdate) return;
 
-      if (deliveryUpdate.status === 'arrived') {
-        setShowOTPInput(true);
-      }
+    setTrackingData(prev => ({
+      ...prev,
+      status: deliveryUpdate.status ?? prev?.status,
+      partner: deliveryUpdate.partner ?? prev?.partner,
+      currentLocation: deliveryUpdate.currentLocation ?? prev?.currentLocation,
+      liveUpdates: {
+        ...prev?.liveUpdates,
+        distanceToCustomer: deliveryUpdate.distanceToCustomer ?? prev?.liveUpdates?.distanceToCustomer,
+        estimatedArrival: deliveryUpdate.estimatedArrival ?? prev?.liveUpdates?.estimatedArrival,
+      },
+      estimatedDeliveryTime: deliveryUpdate.estimatedDeliveryTime ?? prev?.estimatedDeliveryTime,
+      lastUpdate: deliveryUpdate.lastUpdate ?? prev?.lastUpdate,
+    }));
+
+    if (deliveryUpdate.status === 'arrived') {
+      setShowOTPInput(true);
     }
   }, [deliveryUpdates, orderId]);
 

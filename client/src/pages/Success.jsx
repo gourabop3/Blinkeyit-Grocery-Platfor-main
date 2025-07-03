@@ -1,60 +1,108 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useGlobalContext } from '../provider/GlobalProvider'
+import { useDispatch } from 'react-redux'
+import { handleAddItemCart } from '../store/cartProduct'
 import toast from 'react-hot-toast'
 
 const Success = () => {
   const location = useLocation()
   const { fetchCartItem, fetchOrder } = useGlobalContext()
+  const dispatch = useDispatch()
+  const [isProcessing, setIsProcessing] = useState(true)
     
   useEffect(() => {
-    // Check if this is a return from Stripe payment
-    const pendingCartClear = sessionStorage.getItem('pendingCartClear')
-    const urlParams = new URLSearchParams(location.search)
-    const isFromStripe = urlParams.get('session_id') || urlParams.get('payment_intent')
-    
-    // Clear cart if returning from Stripe payment OR if there's a pending cart clear flag
-    if (pendingCartClear === 'true' || isFromStripe) {
-      // Clear the cart after successful payment
-      if (fetchCartItem) {
-        fetchCartItem()
-        console.log('Cart cleared after successful payment')
-      }
+    const handleSuccessPayment = async () => {
+      console.log("Success page loaded, URL params:", location.search)
       
-      // Refresh orders to show the new order
-      if (fetchOrder) {
-        fetchOrder()
-        console.log('Orders refreshed after successful payment')
-      }
+      // Check if this is a return from Stripe payment
+      const urlParams = new URLSearchParams(location.search)
+      const sessionId = urlParams.get('session_id')
+      const paymentIntent = urlParams.get('payment_intent')
+      const pendingCartClear = sessionStorage.getItem('pendingCartClear')
       
-      // Remove the flag
-      sessionStorage.removeItem('pendingCartClear')
+      console.log("Session ID:", sessionId)
+      console.log("Payment Intent:", paymentIntent)
+      console.log("Pending Cart Clear:", pendingCartClear)
       
-      // Show success message only if not from COD
-      if (isFromStripe) {
-        toast.success('Payment completed successfully! Cart has been cleared.')
-      } else if (pendingCartClear === 'true') {
-        toast.success('Payment completed! Cart has been cleared.')
-      }
-    } else {
-      // Fallback: Always refresh cart and orders on success page
-      // This handles cases where user lands on success page directly
-      setTimeout(() => {
-        if (fetchCartItem) {
-          fetchCartItem()
+      const isFromStripe = sessionId || paymentIntent
+      
+      if (isFromStripe || pendingCartClear === 'true') {
+        console.log("Processing successful payment...")
+        
+        // Add a delay to ensure webhook has been processed
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        
+        try {
+          // Force clear cart in Redux store immediately
+          dispatch(handleAddItemCart([]))
+          
+          // Fetch updated cart from server
+          if (fetchCartItem) {
+            await fetchCartItem()
+            console.log('Cart refreshed after successful payment')
+          }
+          
+          // Fetch updated orders
+          if (fetchOrder) {
+            await fetchOrder()
+            console.log('Orders refreshed after successful payment')
+          }
+          
+          // Remove the pending flag
+          sessionStorage.removeItem('pendingCartClear')
+          
+          // Show success message
+          toast.success('Payment completed successfully! Your order has been placed.')
+          
+        } catch (error) {
+          console.error("Error refreshing data:", error)
+          toast.error('Payment successful, but there was an issue refreshing data. Please check your orders.')
         }
-        if (fetchOrder) {
-          fetchOrder()
+      } else {
+        // Not from payment, just refresh data
+        console.log("Not from payment, refreshing data...")
+        try {
+          if (fetchCartItem) {
+            await fetchCartItem()
+          }
+          if (fetchOrder) {
+            await fetchOrder()
+          }
+        } catch (error) {
+          console.error("Error refreshing data:", error)
         }
-      }, 1000) // Small delay to ensure page is fully loaded
+      }
+      
+      setIsProcessing(false)
     }
-  }, [fetchCartItem, fetchOrder, location.search])
+
+    handleSuccessPayment()
+  }, [fetchCartItem, fetchOrder, location.search, dispatch])
   
-  console.log("location", location)  
+  console.log("Success page location:", location)  
+  
   return (
     <div className='m-2 w-full max-w-md bg-green-200 p-4 py-5 rounded mx-auto flex flex-col justify-center items-center gap-5'>
-        <p className='text-green-800 font-bold text-lg text-center'>{Boolean(location?.state?.text) ? location?.state?.text : "Payment" } Successfully</p>
-        <Link to="/" className="border border-green-900 text-green-900 hover:bg-green-900 hover:text-white transition-all px-4 py-1">Go To Home</Link>
+      {isProcessing ? (
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-800"></div>
+          <p className='text-green-800 font-medium'>Processing your order...</p>
+        </div>
+      ) : (
+        <>
+          <p className='text-green-800 font-bold text-lg text-center'>
+            {Boolean(location?.state?.text) ? location?.state?.text : "Payment" } Successfully
+          </p>
+          <p className='text-green-700 text-center'>Your order has been placed and you will receive a confirmation shortly.</p>
+        </>
+      )}
+      <Link to="/" className="border border-green-900 text-green-900 hover:bg-green-900 hover:text-white transition-all px-4 py-1">
+        Go To Home
+      </Link>
+      <Link to="/user/order" className="bg-green-800 text-white hover:bg-green-700 transition-all px-4 py-1 rounded">
+        View My Orders
+      </Link>
     </div>
   )
 }

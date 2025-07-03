@@ -13,9 +13,10 @@ const TrackOrder = () => {
   const { 
     joinOrderTracking, 
     leaveOrderTracking, 
-    getDeliveryUpdate, 
+    getDeliveryUpdate,
     requestDeliveryUpdate,
-    isConnected 
+    isConnected,
+    deliveryUpdates
   } = useSocket();
 
   const [trackingData, setTrackingData] = useState(null);
@@ -102,9 +103,9 @@ const TrackOrder = () => {
     }
   }, [orderId, isConnected]);
 
-  // Listen for real-time updates
+  // Listen for real-time updates coming from context
   useEffect(() => {
-    const deliveryUpdate = getDeliveryUpdate(orderId);
+    const deliveryUpdate = deliveryUpdates[orderId];
     if (deliveryUpdate) {
       setTrackingData(prev => ({
         ...prev,
@@ -119,7 +120,7 @@ const TrackOrder = () => {
         setShowOTPInput(true);
       }
     }
-  }, [getDeliveryUpdate(orderId)]);
+  }, [deliveryUpdates, orderId]);
 
   const fetchTrackingData = async () => {
     try {

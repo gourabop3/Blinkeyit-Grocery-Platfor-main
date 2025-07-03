@@ -13,7 +13,13 @@ L.Icon.Default.mergeOptions({
 });
 
 const DeliveryMap = ({ partnerLocation, customerLocation }) => {
-  if (!partnerLocation && !customerLocation) return null;
+  if (!partnerLocation && !customerLocation) {
+    return (
+      <div className="w-full h-64 rounded-lg flex items-center justify-center bg-gray-100 text-gray-500 mb-6">
+        Map preview not available
+      </div>
+    );
+  }
 
   const getLatLng = (location) => {
     if (!location) return null;

@@ -257,19 +257,19 @@ export const SocketProvider = ({ children }) => {
           const deliveriesArr = response.data.data.deliveries || [];
           const mapped = {};
           deliveriesArr.forEach(del => {
-            if (del.lastLocationUpdate && del.lastLocationUpdate.latitude) {
-              mapped[del.orderId?._id || del.orderId] = {
-                orderId: del.orderId?._id || del.orderId,
-                status: del.status,
-                location: {
-                  latitude: del.lastLocationUpdate.latitude,
-                  longitude: del.lastLocationUpdate.longitude,
-                },
-                distanceToCustomer: del.metrics?.distanceToCustomer,
-                estimatedArrival: del.metrics?.estimatedDeliveryTime,
-                route: del.route?.map(pt => [pt.latitude, pt.longitude]) || [],
-              };
-            }
+            mapped[del.orderId?._id || del.orderId] = {
+              orderId: del.orderId?._id || del.orderId,
+              status: del.status,
+              location: {
+                latitude: del.lastLocationUpdate?.latitude ?? del.storeLocation?.latitude,
+                longitude: del.lastLocationUpdate?.longitude ?? del.storeLocation?.longitude,
+              },
+              distanceToCustomer: del.metrics?.distanceToCustomer,
+              estimatedArrival: del.metrics?.estimatedDeliveryTime,
+              route: del.route?.map(pt => [pt.latitude, pt.longitude]) || [],
+              storeLocation: del.storeLocation,
+              customerLocation: del.customerLocation,
+            };
           });
           setLiveDeliveries(mapped);
         }

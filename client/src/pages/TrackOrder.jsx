@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import SummaryApi from '../common/SummaryApi';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 const TrackOrder = () => {
   const { orderId } = useParams();

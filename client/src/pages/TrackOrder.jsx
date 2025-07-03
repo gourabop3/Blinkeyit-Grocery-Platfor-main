@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import DeliveryMap from '../components/DeliveryMap';
 import StatusBadge from '../components/StatusBadge';
 import OrderTimeline from '../components/OrderTimeline';
+import DeliveryPartnerCard from '../components/DeliveryPartnerCard';
 
 const TrackOrder = () => {
   const { orderId } = useParams();
@@ -281,7 +282,7 @@ const TrackOrder = () => {
   const currentStatus = statusConfig[trackingData.status] || statusConfig.assigned;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-0 py-0 md:px-4 md:py-8">
       <div className="max-w-4xl mx-auto">
         
         {/* Header */}
@@ -379,55 +380,17 @@ const TrackOrder = () => {
           )}
 
           {/* Map - Real-time location */}
-          <DeliveryMap
-            partnerLocation={liveLocation || trackingData.currentLocation}
-            customerLocation={trackingData.customerLocation}
-          />
+          <div className="-mx-4 md:mx-0">
+            <DeliveryMap
+              partnerLocation={liveLocation || trackingData.currentLocation}
+              customerLocation={trackingData.customerLocation}
+            />
+          </div>
         </div>
 
-        {/* Delivery Partner Info */}
+        {/* Bottom overlay partner card on small screens */}
         {trackingData.deliveryPartnerId && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Partner</h3>
-            <div className="flex items-center gap-4">
-              {/* Avatar */}
-              {trackingData.deliveryPartnerId.photoUrl ? (
-                <img
-                  src={trackingData.deliveryPartnerId.photoUrl}
-                  alt="Partner avatar"
-                  className="w-14 h-14 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center text-2xl">👤</div>
-              )}
-
-              <div className="flex-1">
-                <div className="font-semibold text-gray-900 flex items-center gap-1">
-                  {trackingData.deliveryPartnerId.name}
-                  {/* Rating */}
-                  {trackingData.deliveryPartnerId.statistics?.avgRating && (
-                    <span className="text-yellow-500 text-sm">⭐ {trackingData.deliveryPartnerId.statistics.avgRating.toFixed(1)}</span>
-                  )}
-                </div>
-                <div className="text-gray-600 text-sm">{trackingData.deliveryPartnerId.mobile}</div>
-                {trackingData.deliveryPartnerId.vehicleDetails && (
-                  <div className="text-xs text-gray-500 capitalize mt-0.5">
-                    {trackingData.deliveryPartnerId.vehicleDetails.type} • {trackingData.deliveryPartnerId.vehicleDetails.plateNumber}
-                  </div>
-                )}
-              </div>
-
-              {/* Call button */}
-              {trackingData.deliveryPartnerId.mobile && (
-                <a
-                  href={`tel:${trackingData.deliveryPartnerId.mobile}`}
-                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                >
-                  📞 Call
-                </a>
-              )}
-            </div>
-          </div>
+          <DeliveryPartnerCard partner={trackingData.deliveryPartnerId} />
         )}
 
         {/* Delivery Timeline */}

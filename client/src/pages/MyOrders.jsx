@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiPackage, FiTruck, FiCheck, FiClock, FiSearch, FiMapPin } from "react-icons/fi";
 import { MdCancel } from "react-icons/md";
 import NoData from "../components/NoData";
+import DeliveryTracker from "../components/DeliveryTracker";
 
 const MyOrders = () => {
   const navigate = useNavigate();
@@ -308,10 +309,20 @@ const MyOrders = () => {
                         setSelectedOrder(order);
                         setShowOrderDetails(true);
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm mr-2"
                     >
                       View Details
                     </button>
+                    {/* Track Order Button for trackable orders */}
+                    {['Assigned', 'Picked_up', 'In_transit'].includes(order.order_status) && (
+                      <button
+                        onClick={() => navigate(`/track/${order._id}`)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                      >
+                        <FiMapPin className="inline mr-1" />
+                        Track Live
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -345,6 +356,9 @@ const MyOrders = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Delivery Tracker Component */}
+                <DeliveryTracker order={order} />
               </div>
             ))}
           </div>

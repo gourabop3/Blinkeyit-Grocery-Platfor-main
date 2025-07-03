@@ -147,6 +147,14 @@ const router = createBrowserRouter([
             path: "app-banners",
             element: <div className="p-6"><h1 className="text-2xl font-bold">App Banners</h1><p className="text-gray-600">Coming soon...</p></div>,
           },
+          {
+            path: "delivery-partners",
+            element: <div className="p-6"><h1 className="text-2xl font-bold">Delivery Partners</h1><p className="text-gray-600">Manage delivery partners...</p></div>,
+          },
+          {
+            path: "delivery-tracking",
+            element: <div className="p-6"><h1 className="text-2xl font-bold">Live Deliveries</h1><p className="text-gray-600">Monitor active deliveries...</p></div>,
+          },
         ],
       },
       {

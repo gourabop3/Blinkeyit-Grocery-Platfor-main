@@ -20,6 +20,7 @@ import GlobalProvider from "./provider/GlobalProvider";
 import CartMobileLink from "./components/CartMobile";
 import isAdmin from "./utils/isAdmin";
 import { SocketProvider } from "./context/SocketContext";
+import DeliveryNotifications from "./components/DeliveryNotifications";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -151,6 +152,8 @@ const App = () => {
         <Toaster />
         {/* Hide CartMobileLink for admin users */}
         {!(userIsAdmin && isAdminRoute) && location.pathname !== "/checkout" && <CartMobileLink />}
+        {/* Real-time delivery notifications */}
+        <DeliveryNotifications />
       </SocketProvider>
     </GlobalProvider>
   );

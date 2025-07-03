@@ -2,27 +2,54 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import isAdmin from "../utils/isAdmin";
-import { FaFacebook } from "react-icons/fa";
-import { FaInstagram } from "react-icons/fa";
-import { FaLinkedin } from "react-icons/fa";
+import { FaTelegramPlane, FaInstagram } from "react-icons/fa";
+import { SiGmail } from "react-icons/si";
 
 const Footer = () => {
   const user = useSelector((state) => state?.user);
   const location = useLocation();
 
-  // Check if current user is admin and on admin routes
   const userIsAdmin = user && user.role && isAdmin(user.role);
-  const isAdminRoute = location.pathname.startsWith('/dashboard/admin');
+  const isAdminRoute = location.pathname.startsWith("/dashboard/admin");
 
-  // Hide footer for admin users on admin routes for clean professional look
-  if (userIsAdmin && isAdminRoute) {
-    return null;
-  }
+  // Hide footer on admin dashboard pages
+  if (userIsAdmin && isAdminRoute) return null;
 
   return (
     <footer className="border-t bg-neutral-100 py-4">
       <div className="container mx-auto px-2 text-center text-sm text-neutral-600">
         <p>&copy; 2025 Grocery. All rights reserved.</p>
+
+        {/* Social icons */}
+        <div className="mt-2 flex justify-center space-x-5 text-xl text-neutral-700">
+          {/* Telegram */}
+          <a
+            href="https://t.me/gourabop"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Telegram"
+          >
+            <FaTelegramPlane className="hover:text-sky-500 transition-colors" />
+          </a>
+
+          {/* Instagram */}
+          <a
+            href="https://instagram.com/gourab_op_84"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+          >
+            <FaInstagram className="hover:text-pink-500 transition-colors" />
+          </a>
+
+          {/* Gmail */}
+          <a
+            href="mailto:gourabmullick200@gmail.com"
+            aria-label="Gmail"
+          >
+            <SiGmail className="hover:text-red-600 transition-colors" />
+          </a>
+        </div>
       </div>
     </footer>
   );

@@ -150,7 +150,11 @@ const SummaryApi = {
     url: "/api/order/cash-on-delivery",
     method: "post",
   },
-  payment_url: {
+      clearCart: {
+        url: "/api/order/clear-cart",
+        method: "post"
+    },
+    payment_url: {
     url: "/api/order/checkout",
     method: "post",
   },

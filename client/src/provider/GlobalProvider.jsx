@@ -135,6 +135,24 @@ const GlobalProvider = ({ children }) => {
     }
   };
 
+  const clearCart = async () => {
+    try {
+      const response = await Axios({
+        ...SummaryApi.clearCart,
+      });
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        dispatch(handleAddItemCart([]));
+        console.log("Cart cleared successfully:", responseData.data);
+        return true;
+      }
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchCartItem();
     // handleLogoutOut();
@@ -153,6 +171,7 @@ const GlobalProvider = ({ children }) => {
         totalQty,
         notDiscountTotalPrice,
         fetchOrder,
+        clearCart,
       }}
     >
       {children}

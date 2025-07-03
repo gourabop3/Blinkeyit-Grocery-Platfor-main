@@ -5,6 +5,48 @@ const OrderModel = require("../models/order.model.js");
 const UserModel = require("../models/user.model.js");
 const ProductModel = require("../models/product.model.js");
 
+// Direct cart clearing controller
+const clearCartController = async (request, response) => {
+  try {
+    const userId = request.userId; // auth middleware
+    
+    console.log("Clearing cart for user:", userId);
+    
+    // Remove all cart items from database
+    const removeCartItems = await CartProductModel.deleteMany({
+      userId: userId,
+    });
+    
+    // Update user's shopping cart array
+    const updateInUser = await UserModel.updateOne(
+      { _id: userId },
+      { shopping_cart: [] }
+    );
+    
+    console.log("Cart cleared successfully:", {
+      removedItems: removeCartItems.deletedCount,
+      userUpdated: updateInUser.modifiedCount
+    });
+    
+    return response.json({
+      message: "Cart cleared successfully",
+      error: false,
+      success: true,
+      data: {
+        removedItems: removeCartItems.deletedCount,
+        userUpdated: updateInUser.modifiedCount > 0
+      }
+    });
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+};
+
 const CashOnDeliveryOrderController = async (request, response) => {
   try {
     const userId = request.userId; // auth middleware
@@ -205,7 +247,7 @@ const webhookStripe = async (request, response) => {
   const event = request.body;
   const endPointSecret = process.env.STRIPE_ENPOINT_WEBHOOK_SECRET_KEY;
 
-  console.log("event", event);
+  console.log("Stripe webhook event:", event.type);
 
   // Handle the event
   switch (event.type) {
@@ -215,6 +257,9 @@ const webhookStripe = async (request, response) => {
         session.id
       );
       const userId = session.metadata.userId;
+      
+      console.log("Processing successful payment for user:", userId);
+      
       const orderDoc = await getOrderProductItems({
         lineItems,
         userId,
@@ -224,12 +269,25 @@ const webhookStripe = async (request, response) => {
       });
 
       if (orderDoc) {
-        const removeCartItems = await UserModel.findByIdAndUpdate(userId, {
-          shopping_cart: [],
-        });
-        const removeCartProductDB = await CartProductModel.deleteMany({
-          userId: userId,
-        });
+        console.log("Order created successfully, clearing cart...");
+        
+        // Clear cart - more robust clearing
+        try {
+          const removeCartItems = await CartProductModel.deleteMany({
+            userId: userId,
+          });
+          
+          const updateInUser = await UserModel.findByIdAndUpdate(userId, {
+            shopping_cart: [],
+          });
+          
+          console.log("Cart cleared successfully:", {
+            removedItems: removeCartItems.deletedCount,
+            userUpdated: !!updateInUser
+          });
+        } catch (clearError) {
+          console.error("Error clearing cart in webhook:", clearError);
+        }
       }
       break;
     default:
@@ -396,4 +454,5 @@ module.exports = {
   getOrderDetailsController,
   getAllOrdersController,
   updateOrderStatusController,
+  clearCartController,
 };

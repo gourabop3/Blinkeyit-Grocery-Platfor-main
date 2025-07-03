@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { useGlobalContext } from '../provider/GlobalProvider'
 import { useDispatch } from 'react-redux'
 import { handleAddItemCart } from '../store/cartProduct'
+import Axios from '../utils/Axios'
+import SummaryApi from '../common/SummaryApi'
 import toast from 'react-hot-toast'
 
 const Success = () => {
@@ -12,6 +14,38 @@ const Success = () => {
   const [isProcessing, setIsProcessing] = useState(true)
   const hasProcessed = useRef(false) // Flag to prevent multiple executions
   const hasShownToast = useRef(false) // Flag to prevent multiple toasts
+
+  // Direct cart clearing function
+  const clearCartDirectly = async () => {
+    try {
+      console.log("Clearing cart directly via API...")
+      const response = await Axios({
+        ...SummaryApi.clearCart
+      });
+      
+      const { data: responseData } = response;
+      
+      if (responseData.success) {
+        console.log("Cart cleared successfully:", responseData.data);
+        
+        // Force clear cart in Redux store immediately
+        dispatch(handleAddItemCart([]))
+        
+        // Fetch updated cart from server to confirm
+        if (fetchCartItem) {
+          await fetchCartItem()
+        }
+        
+        return true;
+      } else {
+        console.error("Failed to clear cart:", responseData.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error clearing cart directly:", error);
+      return false;
+    }
+  }
     
   useEffect(() => {
     // Prevent multiple executions
@@ -46,16 +80,20 @@ const Success = () => {
         }
         
         // Add a delay to ensure webhook has been processed
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        await new Promise(resolve => setTimeout(resolve, 2000))
         
         try {
-          // Force clear cart in Redux store immediately
-          dispatch(handleAddItemCart([]))
+          // Clear cart directly using the new endpoint
+          const cartCleared = await clearCartDirectly()
           
-          // Fetch updated cart from server
-          if (fetchCartItem) {
-            await fetchCartItem()
-            console.log('Cart refreshed after successful payment')
+          if (cartCleared) {
+            console.log('Cart cleared successfully via direct API call')
+          } else {
+            // Fallback: try to fetch cart items to refresh
+            console.log('Direct cart clear failed, trying to refresh cart...')
+            if (fetchCartItem) {
+              await fetchCartItem()
+            }
           }
           
           // Fetch updated orders
@@ -68,7 +106,7 @@ const Success = () => {
           sessionStorage.removeItem('pendingCartClear')
           
         } catch (error) {
-          console.error("Error refreshing data:", error)
+          console.error("Error in success payment processing:", error)
           if (!hasShownToast.current) {
             toast.error('Payment successful, but there was an issue refreshing data. Please check your orders.')
             hasShownToast.current = true

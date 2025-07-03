@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useSelector } from 'react-redux';
 import { useEffect as useDebugEffect } from 'react';
+import Axios from '../utils/Axios';
+import SummaryApi, { baseURL } from '../common/SummaryApi';
 
 const SocketContext = createContext();
 
@@ -238,6 +240,40 @@ export const SocketProvider = ({ children }) => {
       };
     }
   }, [user, token]);
+
+  // Initial fetch of active deliveries for admin users
+  useEffect(() => {
+    const fetchActiveDeliveries = async () => {
+      try {
+        if (user?.role !== 'ADMIN') return;
+        const response = await Axios({ ...SummaryApi.getAllActiveDeliveries });
+        if (response.data.success) {
+          const deliveriesArr = response.data.data.deliveries || [];
+          const mapped = {};
+          deliveriesArr.forEach(del => {
+            if (del.lastLocationUpdate && del.lastLocationUpdate.latitude) {
+              mapped[del.orderId?._id || del.orderId] = {
+                orderId: del.orderId?._id || del.orderId,
+                status: del.status,
+                location: {
+                  latitude: del.lastLocationUpdate.latitude,
+                  longitude: del.lastLocationUpdate.longitude,
+                },
+                distanceToCustomer: del.metrics?.distanceToCustomer,
+                estimatedArrival: del.metrics?.estimatedDeliveryTime,
+                route: del.route?.map(pt => [pt.latitude, pt.longitude]) || [],
+              };
+            }
+          });
+          setLiveDeliveries(mapped);
+        }
+      } catch (err) {
+        console.error('[ADMIN] Failed to fetch active deliveries', err);
+      }
+    };
+
+    fetchActiveDeliveries();
+  }, [user]);
 
   // Helper functions
   const joinOrderTracking = (orderId) => {

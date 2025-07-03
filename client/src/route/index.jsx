@@ -23,6 +23,7 @@ import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import AdminDiagnostic from "../pages/AdminDiagnostic";
 import LiveDeliveriesMap from "../pages/LiveDeliveriesMap";
+import AdminDebugPage from "../pages/AdminDebugPage";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -155,6 +156,10 @@ const router = createBrowserRouter([
           {
             path: "delivery-tracking",
             element: <LiveDeliveriesMap />,
+          },
+          {
+            path: "debug",
+            element: <AdminDebugPage />,
           },
         ],
       },

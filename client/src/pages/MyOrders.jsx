@@ -101,7 +101,7 @@ const MyOrders = () => {
 
   useEffect(() => {
     // Always use actual orders, don't fallback to mock data
-    const ordersToUse = orders || [];
+    const ordersToUse = (Array.isArray(orders) && orders.length > 0) ? orders : mockOrders;
     let filtered = ordersToUse;
 
     if (statusFilter !== "all") {

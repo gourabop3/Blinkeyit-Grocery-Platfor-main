@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const DeliveryTracker = ({ order }) => {
   const navigate = useNavigate();
-  const { joinOrderTracking, getDeliveryUpdate, isConnected } = useSocket();
+  const { joinOrderTracking, getDeliveryUpdate, deliveryUpdates, isConnected } = useSocket();
   const [deliveryStatus, setDeliveryStatus] = useState(null);
 
   useEffect(() => {
@@ -20,13 +20,14 @@ const DeliveryTracker = ({ order }) => {
     }
   }, [order, joinOrderTracking, getDeliveryUpdate, isConnected]);
 
-  // Listen for real-time updates
+  // Listen for incoming delivery updates for this order
   useEffect(() => {
-    const update = getDeliveryUpdate(order?._id);
+    if (!order?._id) return;
+    const update = deliveryUpdates[order._id];
     if (update) {
       setDeliveryStatus(update);
     }
-  }, [getDeliveryUpdate(order?._id)]);
+  }, [deliveryUpdates, order?._id]);
 
   const getStatusDisplay = (status) => {
     const statusMap = {

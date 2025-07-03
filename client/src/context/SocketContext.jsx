@@ -135,13 +135,19 @@ export const SocketProvider = ({ children }) => {
             estimatedArrival: data.estimatedArrival,
             route: data.route,
             lastLocationUpdate: data.timestamp,
+            storeLocation: data.storeLocation,
+            customerLocation: data.customerLocation,
           }
         }));
 
         // Admin live deliveries map data
         setLiveDeliveries(prev => ({
           ...prev,
-          [data.orderId]: data,
+          [data.orderId]: {
+            ...data,
+            storeLocation: data.storeLocation,
+            customerLocation: data.customerLocation,
+          },
         }));
       });
 

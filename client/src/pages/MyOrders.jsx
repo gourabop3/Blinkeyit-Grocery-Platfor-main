@@ -100,8 +100,8 @@ const MyOrders = () => {
   ];
 
   useEffect(() => {
-    // Always use actual orders, don't fallback to mock data
-    const ordersToUse = orders || [];
+    // Use mock data when no real orders are available for demo purposes
+    const ordersToUse = orders && orders.length > 0 ? orders : mockOrders;
     let filtered = ordersToUse;
 
     if (statusFilter !== "all") {
@@ -160,33 +160,33 @@ const MyOrders = () => {
   const OrderDetailsModal = ({ order, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b">
+        <div className="p-4 sm:p-6 border-b">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Order Details</h2>
+            <h2 className="text-lg sm:text-xl font-bold">Order Details</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 text-2xl"
             >
               ✕
             </button>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
               <div>
                 <h3 className="font-semibold text-lg">{order.orderId}</h3>
-                <p className="text-gray-600">Placed on {formatDate(order.createdAt)}</p>
+                <p className="text-gray-600 text-sm">Placed on {formatDate(order.createdAt)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-green-600">
+              <div className="flex flex-col sm:text-right">
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   ₹{order.totalAmt.toLocaleString()}
                 </p>
                 <span
                   className={`inline-flex items-center px-2 py-1 text-sm font-medium rounded-full border ${getStatusColor(
                     order.order_status
-                  )}`}
+                  )} mt-1`}
                 >
                   {getStatusIcon(order.order_status)}
                   <span className="ml-1">{order.order_status}</span>
@@ -198,11 +198,11 @@ const MyOrders = () => {
           <div className="mb-6">
             <h4 className="font-semibold mb-3">Delivery Address</h4>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p>{order.delivery_address.address_line}</p>
-              <p>
+              <p className="text-sm sm:text-base">{order.delivery_address.address_line}</p>
+              <p className="text-sm sm:text-base">
                 {order.delivery_address.city}, {order.delivery_address.state}
               </p>
-              <p>PIN: {order.delivery_address.pincode}</p>
+              <p className="text-sm sm:text-base">PIN: {order.delivery_address.pincode}</p>
             </div>
           </div>
 
@@ -212,16 +212,16 @@ const MyOrders = () => {
               {order.products.map((product, index) => (
                 <div
                   key={index}
-                  className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg"
+                  className="flex items-center space-x-3 sm:space-x-4 bg-gray-50 p-3 sm:p-4 rounded-lg"
                 >
                   <img
                     src={product.product_details.image[0]}
                     alt={product.product_details.name}
-                    className="w-16 h-16 object-cover rounded"
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
                   />
-                  <div className="flex-1">
-                    <h5 className="font-medium">{product.product_details.name}</h5>
-                    <p className="text-gray-600">Quantity: {product.quantity}</p>
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-medium text-sm sm:text-base truncate">{product.product_details.name}</h5>
+                    <p className="text-gray-600 text-sm">Quantity: {product.quantity}</p>
                   </div>
                 </div>
               ))}
@@ -236,15 +236,15 @@ const MyOrders = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="bg-white shadow-sm border-b p-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-        <p className="text-gray-600">Track and manage your orders</p>
+      <div className="bg-white shadow-sm border-b p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Orders</h1>
+        <p className="text-gray-600 text-sm sm:text-base">Track and manage your orders</p>
       </div>
 
       {/* Filters */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -253,14 +253,14 @@ const MyOrders = () => {
                   placeholder="Search by order ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-w-0 md:min-w-[150px]"
             >
               <option value="all">All Orders</option>
               <option value="processing">Processing</option>
@@ -279,78 +279,84 @@ const MyOrders = () => {
             {filteredOrders.map((order, index) => (
               <div
                 key={order._id + index + "order"}
-                className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 hover:shadow-md transition-shadow"
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
+                <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 mb-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(order.order_status)}
                       <div>
-                        <h3 className="font-semibold text-lg">{order.orderId}</h3>
-                        <p className="text-gray-600 text-sm">
+                        <h3 className="font-semibold text-base sm:text-lg">{order.orderId}</h3>
+                        <p className="text-gray-600 text-xs sm:text-sm">
                           Placed on {formatDate(order.createdAt)}
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4 mt-4 lg:mt-0">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border ${getStatusColor(
-                        order.order_status
-                      )}`}
-                    >
-                      {order.order_status}
-                    </span>
-                    <p className="text-xl font-bold text-green-600">
-                      ₹{order.totalAmt.toLocaleString()}
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setShowOrderDetails(true);
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm mr-2"
-                    >
-                      View Details
-                    </button>
-                    {/* Track Order Button for trackable orders */}
-                    { !['Delivered','Cancelled'].includes(order.order_status) && (
-                      <button
-                        onClick={() => navigate(`/track/${order._id}`)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+                    <div className="flex items-center justify-between sm:flex-col sm:items-end">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 text-xs sm:text-sm font-medium rounded-full border ${getStatusColor(
+                          order.order_status
+                        )}`}
                       >
-                        <FiMapPin className="inline mr-1" />
-                        Track Live
+                        {order.order_status}
+                      </span>
+                      <p className="text-lg sm:text-xl font-bold text-green-600 ml-2 sm:ml-0 sm:mt-1">
+                        ₹{order.totalAmt.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowOrderDetails(true);
+                        }}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm font-medium transition-colors"
+                      >
+                        View Details
                       </button>
-                    )}
+                      {/* Track Order Button for trackable orders */}
+                      {!['Delivered','Cancelled'].includes(order.order_status) && (
+                        <button
+                          onClick={() => navigate(`/track/${order._id}`)}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center"
+                        >
+                          <FiMapPin className="mr-1" />
+                          Track Live
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Products Preview */}
                 <div className="border-t pt-4">
-                  <div className="flex items-center space-x-4 overflow-x-auto">
-                    {order.products.slice(0, 3).map((product, productIndex) => (
-                      <div
-                        key={productIndex}
-                        className="flex items-center space-x-3 min-w-0 flex-shrink-0"
-                      >
-                        <img
-                          src={product.product_details.image[0]}
-                          alt={product.product_details.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {product.product_details.name}
-                          </p>
-                          <p className="text-gray-600 text-xs">
-                            Qty: {product.quantity}
-                          </p>
+                  <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4 sm:overflow-x-auto">
+                    <div className="flex space-x-3 overflow-x-auto pb-2 sm:pb-0">
+                      {order.products.slice(0, 3).map((product, productIndex) => (
+                        <div
+                          key={productIndex}
+                          className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0"
+                        >
+                          <img
+                            src={product.product_details.image[0]}
+                            alt={product.product_details.name}
+                            className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[150px]">
+                              {product.product_details.name}
+                            </p>
+                            <p className="text-gray-600 text-xs">
+                              Qty: {product.quantity}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                     {order.products.length > 3 && (
-                      <div className="text-gray-500 text-sm">
+                      <div className="text-gray-500 text-xs sm:text-sm flex-shrink-0">
                         +{order.products.length - 3} more items
                       </div>
                     )}

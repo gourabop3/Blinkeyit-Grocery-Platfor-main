@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { useEffect as useDebugEffect } from 'react';
 import Axios from '../utils/Axios';
 import SummaryApi, { baseURL } from '../common/SummaryApi';
+import toast from 'react-hot-toast';
 
 const SocketContext = createContext();
 
@@ -31,6 +32,36 @@ export const SocketProvider = ({ children }) => {
   const token = sessionStorage.getItem('accesstoken') || localStorage.getItem('token');
 
   console.log('[DEBUG][TOKEN]', token ? 'Token present' : 'No token');
+
+  // Helper: unified toast styling
+  const showToast = (title, body, type = 'success') => {
+    const message = `${title}${body ? ' – ' + body : ''}`;
+    const baseOptions = {
+      duration: 5000,
+      position: 'top-right',
+      style: {
+        background: '#ffffff',
+        color: '#111827',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.08)',
+      },
+      iconTheme: {
+        primary: '#15803d', // Tailwind green-700
+        secondary: '#ffffff',
+      },
+    };
+
+    // Use toast variant based on type
+    if (type === 'error') {
+      toast.error(message, baseOptions);
+    } else if (type === 'loading') {
+      toast.loading(message, baseOptions);
+    } else if (type === 'info') {
+      toast(message, baseOptions);
+    } else {
+      toast.success(message, baseOptions);
+    }
+  };
 
   useEffect(() => {
     if (user && token) {
@@ -83,10 +114,7 @@ export const SocketProvider = ({ children }) => {
           }
         }));
         
-        // Show notification
-        if (window.showNotification) {
-          window.showNotification('Order Assigned', 'Your order has been assigned to a delivery partner!');
-        }
+        showToast('Order Assigned', 'Your order has been assigned to a delivery partner!', 'success');
       });
 
       socketInstance.on('delivery_status_update', (data) => {
@@ -103,16 +131,15 @@ export const SocketProvider = ({ children }) => {
           }
         }));
 
-        // Admin notification
-        const importantStatuses = ['picked_up', 'in_transit', 'arrived', 'delivered'];
-        if (importantStatuses.includes(data.status) && window.showNotification) {
-          const statusMessages = {
-            picked_up: 'Order picked up from store',
-            in_transit: 'Your order is on the way!',
-            arrived: 'Delivery partner has arrived',
-            delivered: 'Order delivered successfully!',
-          };
-          window.showNotification('Delivery Update', statusMessages[data.status] || 'Order status updated');
+        // User-facing toast for key status updates
+        const statusMessages = {
+          picked_up: 'Order picked up from store',
+          in_transit: 'Your order is on the way!',
+          arrived: 'Delivery partner has arrived',
+          delivered: 'Order delivered successfully!',
+        };
+        if (statusMessages[data.status]) {
+          showToast('Delivery Update', statusMessages[data.status], 'info');
         }
 
         // Play sound for admins
@@ -164,9 +191,7 @@ export const SocketProvider = ({ children }) => {
           }
         }));
 
-        if (window.showNotification) {
-          window.showNotification('Delivery Complete! 🎉', 'Your order has been delivered successfully!');
-        }
+        showToast('Delivery Complete! 🎉', 'Your order has been delivered successfully!', 'success');
       });
 
       socketInstance.on('delivery_issue_reported', (data) => {
@@ -185,9 +210,7 @@ export const SocketProvider = ({ children }) => {
           }
         }));
 
-        if (window.showNotification) {
-          window.showNotification('Delivery Issue', `Issue reported: ${data.description}`);
-        }
+        showToast('Delivery Issue', data.description, 'error');
       });
 
       socketInstance.on('delivery_cancelled', (data) => {
@@ -202,9 +225,7 @@ export const SocketProvider = ({ children }) => {
           }
         }));
 
-        if (window.showNotification) {
-          window.showNotification('Delivery Cancelled', `Reason: ${data.reason}`);
-        }
+        showToast('Delivery Cancelled', data.reason, 'error');
       });
 
       socketInstance.on('otp_verified', (data) => {
@@ -217,6 +238,8 @@ export const SocketProvider = ({ children }) => {
             lastUpdate: new Date(),
           }
         }));
+
+        showToast('OTP Verified', 'Delivery OTP verified successfully', 'success');
       });
 
       socketInstance.on('delivery_update', (data) => {

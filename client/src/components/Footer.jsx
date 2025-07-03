@@ -22,7 +22,7 @@ const Footer = () => {
   return (
     <footer className="border-t bg-neutral-100 py-4">
       <div className="container mx-auto px-2 text-center text-sm text-neutral-600">
-        <p>&copy; 2024 Blinkeyit. All rights reserved.</p>
+        <p>&copy; 2025 Grocery. All rights reserved.</p>
       </div>
     </footer>
   );

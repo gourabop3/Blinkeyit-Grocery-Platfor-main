@@ -34,10 +34,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && token) {
-<<<<<<< HEAD
       console.log('[DEBUG][SOCKET] Initializing socket. App role:', user.role);
-=======
->>>>>>> origin/master
       // Map application roles to socket userType labels expected by backend
       const roleToUserType = {
         'ADMIN': 'admin',

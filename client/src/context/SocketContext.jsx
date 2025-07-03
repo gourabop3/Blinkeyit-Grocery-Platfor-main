@@ -27,7 +27,7 @@ export const SocketProvider = ({ children }) => {
       const socketInstance = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
         auth: {
           token: token,
-          userType: 'customer', // Can be 'customer', 'partner', or 'admin'
+          userType: user?.role || 'customer', // Can be 'customer', 'partner', or 'admin'
         },
         transports: ['websocket', 'polling'],
       });

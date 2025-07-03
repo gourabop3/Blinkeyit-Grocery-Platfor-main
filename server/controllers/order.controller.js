@@ -220,7 +220,7 @@ const webhookStripe = async (request, response) => {
         userId,
         addressId: session.metadata.addressId,
         paymentId: session.payment_intent,
-        payment_status: session.payment_status,
+        payment_status: "PAID", // Set to PAID for successful online payments
       });
 
       if (orderDoc) {

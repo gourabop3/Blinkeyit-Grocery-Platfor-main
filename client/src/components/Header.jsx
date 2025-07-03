@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import logo from "../assets/logo.png";
+// Logo will be replaced with Grocery logo - using inline SVG for now
+const groceryLogoSVG = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjgwIiB2aWV3Qm94PSIwIDAgMjAwIDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8dGV4dCB4PSIxMCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0OCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNGRjgwMDAiPkdyPC90ZXh0Pgo8dGV4dCB4PSI4NSIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0OCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyMkM1NUIiPm9jZXJ5PC90ZXh0Pgo8L3N2Zz4K`;
 import Search from "./Search";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaRegCircleUser } from "react-icons/fa6";
@@ -63,17 +64,17 @@ const Header = () => {
           <div className="h-full">
             <Link to={"/"} className="h-full flex justify-center items-center">
               <img
-                src={logo}
+                src={groceryLogoSVG}
                 width={170}
                 height={60}
-                alt="logo"
+                alt="Grocery logo"
                 className="hidden lg:block"
               />
               <img
-                src={logo}
+                src={groceryLogoSVG}
                 width={120}
                 height={60}
-                alt="logo"
+                alt="Grocery logo"
                 className="lg:hidden"
               />
             </Link>

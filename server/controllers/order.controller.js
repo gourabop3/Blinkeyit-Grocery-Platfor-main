@@ -524,12 +524,44 @@ const updateOrderStatusController = async (request, response) => {
       });
     }
     
-    const updatedOrder = await OrderModel.findByIdAndUpdate(
-      orderId,
-      { order_status },
-      { new: true }
-    ).populate('userId', 'name email');
-    
+    // Valid status transitions
+    const validStatuses = ["Processing","Confirmed","Preparing","Picked_up","In_transit","Delivered","Cancelled"];
+
+    if(!validStatuses.includes(order_status)) {
+      return response.status(400).json({
+        message: "Invalid status value",
+        error: true,
+        success: false,
+      });
+    }
+
+    const order = await OrderModel.findById(orderId);
+    if(!order) {
+      return response.status(404).json({ message:"Order not found", error:true, success:false });
+    }
+
+    const current = order.order_status;
+    const flow = ["Processing","Confirmed","Preparing","Picked_up","In_transit","Delivered"];
+    const currentIndex = flow.indexOf(current);
+    const newIndex = flow.indexOf(order_status);
+
+    // Allow cancel anytime
+    if(order_status !== "Cancelled" && (newIndex === -1 || newIndex < currentIndex || newIndex-currentIndex>1)) {
+      return response.status(400).json({
+        message: `Invalid transition from ${current} to ${order_status}`,
+        error: true,
+        success: false,
+      });
+    }
+
+    order.order_status = order_status;
+    const updatedOrder = await order.save();
+
+    // Emit socket event to admins and customers
+    const { emitToUser, emitToOrder, emitToAdmins } = require("../config/socket");
+    emitToOrder(orderId, "delivery_status_update", { orderId, status: order_status });
+    emitToAdmins("delivery_status_update", { orderId, status: order_status });
+
     if (!updatedOrder) {
       return response.status(404).json({
         message: "Order not found",

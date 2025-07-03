@@ -83,7 +83,7 @@ export const SocketProvider = ({ children }) => {
           }
         }));
 
-        // Show notification for important status updates
+        // Admin notification
         const importantStatuses = ['picked_up', 'in_transit', 'arrived', 'delivered'];
         if (importantStatuses.includes(data.status) && window.showNotification) {
           const statusMessages = {
@@ -93,6 +93,12 @@ export const SocketProvider = ({ children }) => {
             delivered: 'Order delivered successfully!',
           };
           window.showNotification('Delivery Update', statusMessages[data.status] || 'Order status updated');
+        }
+
+        // Play sound for admins
+        if(user && user.role && user.role.includes('admin')) {
+          const audio = new Audio('/notification.mp3');
+          audio.play().catch(()=>{});
         }
       });
 

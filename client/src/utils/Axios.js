@@ -15,7 +15,7 @@ Axios.interceptors.request.use(
       url: config.baseURL + config.url,
       withAuth: Boolean(config.headers.Authorization),
     });
-    const accessToken = sessionStorage.getItem("accesstoken");
+    const accessToken = sessionStorage.getItem("accesstoken") || localStorage.getItem("token");
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -59,7 +59,7 @@ Axios.interceptors.response.use(
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = sessionStorage.getItem("refreshToken");
+      const refreshToken = sessionStorage.getItem("refreshToken") || localStorage.getItem("refreshToken");
 
       if (refreshToken) {
         const newAccessToken = await refreshAccessToken(refreshToken);

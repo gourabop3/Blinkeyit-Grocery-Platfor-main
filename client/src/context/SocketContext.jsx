@@ -277,10 +277,10 @@ export const SocketProvider = ({ children }) => {
                 longitude: del.storeLocation.longitude,
               };
             } else {
-              // Default location (you can change these coordinates)
+              // Default location - Times Square, New York (neutral/recognizable location)
               location = {
-                latitude: 12.9716,
-                longitude: 77.5946,
+                latitude: 40.7580,
+                longitude: -73.9855,
               };
             }
             

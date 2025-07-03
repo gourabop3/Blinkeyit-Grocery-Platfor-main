@@ -19,6 +19,7 @@ import SummaryApi from "./common/SummaryApi";
 import GlobalProvider from "./provider/GlobalProvider";
 import CartMobileLink from "./components/CartMobile";
 import isAdmin from "./utils/isAdmin";
+import { SocketProvider } from "./context/SocketContext";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -141,14 +142,16 @@ const App = () => {
 
   return (
     <GlobalProvider>
-      <Header />
-      <main className={userIsAdmin && isAdminRoute ? "min-h-screen" : "min-h-[78vh]"}>
-        <Outlet />
-      </main>
-      <Footer />
-      <Toaster />
-      {/* Hide CartMobileLink for admin users */}
-      {!(userIsAdmin && isAdminRoute) && location.pathname !== "/checkout" && <CartMobileLink />}
+      <SocketProvider>
+        <Header />
+        <main className={userIsAdmin && isAdminRoute ? "min-h-screen" : "min-h-[78vh]"}>
+          <Outlet />
+        </main>
+        <Footer />
+        <Toaster />
+        {/* Hide CartMobileLink for admin users */}
+        {!(userIsAdmin && isAdminRoute) && location.pathname !== "/checkout" && <CartMobileLink />}
+      </SocketProvider>
     </GlobalProvider>
   );
 };

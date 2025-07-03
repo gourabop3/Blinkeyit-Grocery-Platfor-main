@@ -29,6 +29,7 @@ import CheckoutPage from "../pages/CheckoutPage";
 import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import VerifyEmail from "../pages/VerifyEmail";
+import TrackOrder from "../pages/TrackOrder";
 
 const router = createBrowserRouter([
   {
@@ -176,6 +177,10 @@ const router = createBrowserRouter([
       {
         path: "cancel",
         element: <Cancel />,
+      },
+      {
+        path: "track/:orderId",
+        element: <TrackOrder />,
       },
     ],
   },

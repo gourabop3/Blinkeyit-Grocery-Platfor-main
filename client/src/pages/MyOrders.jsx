@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { FiPackage, FiTruck, FiCheck, FiClock, FiSearch } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiPackage, FiTruck, FiCheck, FiClock, FiSearch, FiMapPin } from "react-icons/fi";
 import { MdCancel } from "react-icons/md";
 import NoData from "../components/NoData";
 
 const MyOrders = () => {
+  const navigate = useNavigate();
   const orders = useSelector((state) => state.orders.order);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");

@@ -525,7 +525,7 @@ const updateOrderStatusController = async (request, response) => {
     }
     
     // Valid status transitions
-    const validStatuses = ["Processing","Confirmed","Preparing","Picked_up","In_transit","Delivered","Cancelled"];
+    const validStatuses = ["Processing","Shipped","Confirmed","Preparing","Picked_up","In_transit","Delivered","Cancelled"];
 
     if(!validStatuses.includes(order_status)) {
       return response.status(400).json({
@@ -541,7 +541,7 @@ const updateOrderStatusController = async (request, response) => {
     }
 
     const current = order.order_status;
-    const flow = ["Processing","Confirmed","Preparing","Picked_up","In_transit","Delivered"];
+    const flow = ["Processing","Shipped","Confirmed","Preparing","Picked_up","In_transit","Delivered"];
     const currentIndex = flow.indexOf(current);
     const newIndex = flow.indexOf(order_status);
 

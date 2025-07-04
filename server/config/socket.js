@@ -1,386 +1,337 @@
-const { Server } = require("socket.io");
-const jwt = require("jsonwebtoken");
+// config/socket.js
+/* ----------------------------------------------------------
+   Socket-IO server for Blinkeyit Grocery
+   ----------------------------------------------------------
+   Changes vs. your original:
+   1. CORS now accepts the same origin list as Express.
+   2. Optional pingInterval / pingTimeout for flaky mobile links.
+   3. Minor safety checks (decoded.id guard, route map fallback).
+----------------------------------------------------------- */
+
+const { Server }           = require("socket.io");
+const jwt                  = require("jsonwebtoken");
+const geolib               = require("geolib");
+
 const DeliveryPartnerModel = require("../models/deliveryPartner.model");
-const DeliveryTrackingModel = require("../models/deliveryTracking.model");
-const UserModel = require("../models/user.model");
-const geolib = require("geolib");
-const OrderModel = require("../models/order.model");
+const DeliveryTrackingModel= require("../models/deliveryTracking.model");
+const UserModel            = require("../models/user.model");
+const OrderModel           = require("../models/order.model");
 
+// ------------------------ shared state ---------------------
 let io;
-const connectedUsers = new Map(); // userId -> socketId
+const connectedUsers    = new Map(); // userId    -> socketId
 const connectedPartners = new Map(); // partnerId -> socketId
-const orderTracking = new Map(); // orderId -> [socketIds of interested parties]
+const orderTracking     = new Map(); // orderId   -> Set<socketId>
 
+// ------------------------ helper ---------------------------
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://grocery-frontend-e2hz.onrender.com",
+  process.env.FRONTEND_URL            // e.g. https://your-vercel.vercel.app
+].filter(Boolean);
+
+// -----------------------------------------------------------
+//  Main initialiser
+// -----------------------------------------------------------
 const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: allowedOrigins,
       methods: ["GET", "POST"],
-      credentials: true,
+      credentials: true
     },
+    // keep sockets alive on shaky 4G
+    pingInterval: 25_000, // client sends ping every 25 s
+    pingTimeout : 60_000  // close if no pong for 60 s
   });
 
-  // Authentication middleware for Socket.io
+  // ---------------- authentication middleware --------------
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth.token;
-      const userType = socket.handshake.auth.userType; // 'customer', 'partner', or 'admin'
-      
-      console.log('[DEBUG][SOCKET][AUTH] Incoming connection attempt', { userType });
+      const { token, userType } = socket.handshake.auth;
 
-      if (!token) {
-        return next(new Error("Authentication error: No token provided"));
-      }
+      if (!token) return next(new Error("Authentication error: No token"));
 
       const decoded = jwt.verify(token, process.env.SECRET_KEY_JWT);
-      
-      if (userType === 'partner') {
-        console.log('[DEBUG][SOCKET][AUTH] Verifying partner token');
-        const partner = await DeliveryPartnerModel.findById(decoded.id);
-        if (!partner) {
-          return next(new Error("Authentication error: Partner not found"));
-        }
-        socket.userId = decoded.id;
-        socket.userType = 'partner';
-        socket.user = partner;
-      } else if (userType === 'customer') {
-        console.log('[DEBUG][SOCKET][AUTH] Verifying customer token');
-        const user = await UserModel.findById(decoded.id);
-        if (!user) {
-          return next(new Error("Authentication error: User not found"));
-        }
-        socket.userId = decoded.id;
-        socket.userType = 'customer';
-        socket.user = user;
-      } else if (userType === 'admin') {
-        console.log('[DEBUG][SOCKET][AUTH] Admin connection');
-        socket.userId = decoded.id;
-        socket.userType = 'admin';
+      if (!decoded?.id) return next(new Error("Invalid token payload"));
+
+      let userDoc;
+      if (userType === "partner") {
+        userDoc           = await DeliveryPartnerModel.findById(decoded.id);
+        socket.userType   = "partner";
+      } else if (userType === "customer") {
+        userDoc           = await UserModel.findById(decoded.id);
+        socket.userType   = "customer";
+      } else {
+        // treat everything else as admin
+        socket.userType   = "admin";
       }
-      
-      console.log('[DEBUG][SOCKET][AUTH] Authenticated', { userType: socket.userType, userId: socket.userId });
+
+      if (userType !== "admin" && !userDoc)
+        return next(new Error(`Authentication error: ${userType} not found`));
+
+      socket.userId = decoded.id;
+      socket.user   = userDoc;   // may be undefined for admin
       next();
-    } catch (error) {
-      console.log("Socket authentication error:", error.message);
+    } catch (err) {
+      console.error("Socket auth error:", err.message);
       next(new Error("Authentication error"));
     }
   });
 
+  // ---------------- connection handler ---------------------
   io.on("connection", (socket) => {
-    console.log(`[DEBUG][SOCKET] ${socket.userType} connected ->`, socket.userId, 'SocketID:', socket.id);
+    console.log(`[SOCKET] ${socket.userType} ${socket.userId} connected (id ${socket.id})`);
 
-    // Store connection based on user type
-    if (socket.userType === 'customer') {
+    /* 1. Save socket id */
+    if (socket.userType === "customer") {
       connectedUsers.set(socket.userId, socket.id);
-    } else if (socket.userType === 'partner') {
+    } else if (socket.userType === "partner") {
       connectedPartners.set(socket.userId, socket.id);
-      
-      // Update partner's online status and socket ID
+
+      // mark partner online
       DeliveryPartnerModel.findByIdAndUpdate(socket.userId, {
         socketId: socket.id,
-        'availability.isOnline': true,
-        'availability.lastSeen': new Date(),
+        "availability.isOnline": true,
+        "availability.lastSeen": new Date()
       }).catch(console.error);
     }
 
-    // Join room for order tracking
+    /* 2. Order-tracking room joins */
     socket.on("join_order_tracking", (orderId) => {
-      console.log('[DEBUG][SOCKET] join_order_tracking', { socketId: socket.id, orderId });
       socket.join(`order_${orderId}`);
-      
-      if (!orderTracking.has(orderId)) {
+
+      if (!orderTracking.has(orderId))
         orderTracking.set(orderId, new Set());
-      }
+
       orderTracking.get(orderId).add(socket.id);
-      
-      console.log(`${socket.userType} joined order tracking:`, orderId);
     });
 
-    // Leave order tracking
     socket.on("leave_order_tracking", (orderId) => {
-      console.log('[DEBUG][SOCKET] leave_order_tracking', { socketId: socket.id, orderId });
       socket.leave(`order_${orderId}`);
-      
+
       if (orderTracking.has(orderId)) {
-        orderTracking.get(orderId).delete(socket.id);
-        if (orderTracking.get(orderId).size === 0) {
-          orderTracking.delete(orderId);
-        }
+        const set = orderTracking.get(orderId);
+        set.delete(socket.id);
+        if (set.size === 0) orderTracking.delete(orderId);
       }
     });
 
-    // Delivery Partner Events
-    if (socket.userType === 'partner') {
-      
-      // Partner location update
-      socket.on("location_update", async (data) => {
+    /* ------------------------------------------------------
+       Only Delivery-Partner-specific events below
+    ------------------------------------------------------ */
+    if (socket.userType === "partner") {
+
+      /** location_update */
+      socket.on("location_update", async ({
+        latitude, longitude, speed, heading, accuracy, orderId
+      }) => {
         try {
-          const { latitude, longitude, speed, heading, accuracy, orderId } = data;
-          
-          // Update partner's current location
+          // 1. Persist partner position (realtime map)
           await DeliveryPartnerModel.findByIdAndUpdate(socket.userId, {
-            currentLocation: {
-              latitude,
-              longitude,
-              lastUpdated: new Date(),
-            },
+            currentLocation: { latitude, longitude, lastUpdated: new Date() }
           });
 
-          // If partner is on an active delivery, update tracking
+          // 2. If tied to an order track it
           if (orderId) {
             const tracking = await DeliveryTrackingModel.findOne({ orderId });
             if (tracking) {
               await tracking.addLocationUpdate(latitude, longitude, speed, heading, accuracy);
-              
-              // Calculate distance to customer
-              let distanceKm = null;
-              let eta = null;
-              if (tracking.customerLocation && tracking.customerLocation.latitude) {
+
+              /* ETA calc */
+              let distanceKm = null, eta = null;
+              if (tracking.customerLocation?.latitude) {
                 const distM = geolib.getDistance(
                   { latitude, longitude },
-                  { latitude: tracking.customerLocation.latitude, longitude: tracking.customerLocation.longitude }
+                  {
+                    latitude : tracking.customerLocation.latitude,
+                    longitude: tracking.customerLocation.longitude
+                  }
                 );
                 distanceKm = distM / 1000;
+                const spd  = speed || 30; // km/h fallback
+                eta        = new Date(Date.now() + (distanceKm / spd) * 3600 * 1000);
 
-                const speedKmh = speed || 30; // fallback 30 km/h
-                eta = new Date(Date.now() + (distanceKm / speedKmh) * 3600 * 1000);
-
-                tracking.metrics.distanceToCustomer = distanceKm;
+                tracking.metrics.distanceToCustomer    = distanceKm;
                 tracking.metrics.estimatedDeliveryTime = eta;
                 await tracking.save();
               }
 
-              // Broadcast location with extras to order room
-              io.to(`order_${orderId}`).emit("delivery_location_update", {
+              const payload = {
                 orderId,
-                location: { latitude, longitude },
-                timestamp: new Date(),
-                speed,
-                heading,
+                location         : { latitude, longitude },
+                timestamp        : new Date(),
+                speed, heading,
                 distanceToCustomer: distanceKm,
-                estimatedArrival: eta,
-                route: tracking.route.map(p => [p.latitude, p.longitude]),
-                storeLocation: tracking.storeLocation,
-                customerLocation: tracking.customerLocation,
-              });
+                estimatedArrival : eta,
+                route            : (tracking.route || []).map(p => [p.latitude, p.longitude]),
+                storeLocation    : tracking.storeLocation,
+                customerLocation : tracking.customerLocation
+              };
 
-              // Additionally, notify all connected admin sockets so admin dashboard can display live updates
-              io.sockets.sockets.forEach((s) => {
-                if (s.userType === 'admin') {
-                  s.emit('delivery_location_update', {
-                    orderId,
-                    location: { latitude, longitude },
-                    timestamp: new Date(),
-                    speed,
-                    heading,
-                    distanceToCustomer: distanceKm,
-                    estimatedArrival: eta,
-                    route: tracking.route.map(p => [p.latitude, p.longitude]),
-                    storeLocation: tracking.storeLocation,
-                    customerLocation: tracking.customerLocation,
-                  });
-                }
+              io.to(`order_${orderId}`).emit("delivery_location_update", payload);
+
+              // broadcast to admins only
+              io.sockets.sockets.forEach(s => {
+                if (s.userType === "admin") s.emit("delivery_location_update", payload);
               });
             }
           }
-          
+
           socket.emit("location_update_ack", { success: true });
-        } catch (error) {
-          console.error("Location update error:", error);
-          socket.emit("location_update_ack", { success: false, error: error.message });
+        } catch (err) {
+          console.error("location_update error:", err);
+          socket.emit("location_update_ack", { success: false, error: err.message });
         }
       });
 
-      // Partner status update
-      socket.on("status_update", async (data) => {
+      /** status_update */
+      socket.on("status_update", async ({
+        orderId, status, notes, location, imageProof
+      }) => {
         try {
-          const { orderId, status, notes, location, imageProof } = data;
-          
           const tracking = await DeliveryTrackingModel.findOne({ orderId });
           if (tracking) {
             await tracking.updateStatus(status, location, notes, imageProof);
-            
-            // Broadcast status update to all tracking this order
-            io.to(`order_${orderId}`).emit("delivery_status_update", {
-              orderId,
-              status,
+
+            const payload = {
+              orderId, status, notes, location,
               timestamp: new Date(),
-              notes,
-              location,
-              partner: {
-                name: socket.user.name,
-                mobile: socket.user.mobile,
-                vehicle: socket.user.vehicleDetails,
-              },
-            });
-            
-            // Notify connected admin sockets about status change
-            io.sockets.sockets.forEach((s) => {
-              if (s.userType === 'admin') {
-                s.emit('delivery_status_update', {
-                  orderId,
-                  status,
-                  timestamp: new Date(),
-                  notes,
-                  location,
-                  partner: {
-                    name: socket.user.name,
-                    mobile: socket.user.mobile,
-                    vehicle: socket.user.vehicleDetails,
-                  },
-                });
+              partner  : {
+                name   : socket.user.name,
+                mobile : socket.user.mobile,
+                vehicle: socket.user.vehicleDetails
               }
+            };
+
+            io.to(`order_${orderId}`).emit("delivery_status_update", payload);
+
+            io.sockets.sockets.forEach(s => {
+              if (s.userType === "admin") s.emit("delivery_status_update", payload);
             });
 
-            // Also update the main Order document to keep order_status in sync
-            let orderStatus = "Processing";
-
-            switch (status) {
-              case "assigned": orderStatus = "Assigned"; break;
-              case "pickup_started": orderStatus = "Preparing"; break;
-              case "picked_up": orderStatus = "Picked_up"; break;
-              case "in_transit": orderStatus = "In_transit"; break;
-              case "delivered": orderStatus = "Delivered"; break;
-              case "failed": orderStatus = "Failed"; break;
-              case "cancelled": orderStatus = "Cancelled"; break;
-            }
-
-            await OrderModel.findByIdAndUpdate(orderId, { order_status: orderStatus });
+            /* keep main Order in sync */
+            const map = {
+              assigned       : "Assigned",
+              pickup_started : "Preparing",
+              picked_up      : "Picked_up",
+              in_transit     : "In_transit",
+              delivered      : "Delivered",
+              failed         : "Failed",
+              cancelled      : "Cancelled"
+            };
+            await OrderModel.findByIdAndUpdate(orderId, {
+              order_status: map[status] || "Processing"
+            });
           }
-          
+
           socket.emit("status_update_ack", { success: true });
-        } catch (error) {
-          console.error("Status update error:", error);
-          socket.emit("status_update_ack", { success: false, error: error.message });
+        } catch (err) {
+          console.error("status_update error:", err);
+          socket.emit("status_update_ack", { success: false, error: err.message });
         }
       });
 
-      // Partner availability toggle
+      /** toggle_availability */
       socket.on("toggle_availability", async (isOnDuty) => {
         try {
           await DeliveryPartnerModel.findByIdAndUpdate(socket.userId, {
-            'availability.isOnDuty': isOnDuty,
-            'availability.lastSeen': new Date(),
+            "availability.isOnDuty": isOnDuty,
+            "availability.lastSeen": new Date()
           });
-          
+
           socket.emit("availability_updated", { isOnDuty });
-          
-          // Notify admin dashboard
           socket.broadcast.emit("partner_availability_changed", {
             partnerId: socket.userId,
             name: socket.user.name,
-            isOnDuty,
+            isOnDuty
           });
-          
-        } catch (error) {
-          console.error("Availability update error:", error);
+        } catch (err) {
+          console.error("toggle_availability error:", err);
         }
       });
 
-      // Report delivery issue
-      socket.on("report_issue", async (data) => {
+      /** report_issue */
+      socket.on("report_issue", async ({ orderId, issueType, description }) => {
         try {
-          const { orderId, issueType, description } = data;
-          
           const tracking = await DeliveryTrackingModel.findOne({ orderId });
           if (tracking) {
             const supportTicketId = `TICKET-${Date.now()}`;
             await tracking.reportIssue(issueType, description, supportTicketId);
-            
-            // Notify customer and admin
+
             io.to(`order_${orderId}`).emit("delivery_issue_reported", {
-              orderId,
-              issueType,
-              description,
-              supportTicketId,
-              timestamp: new Date(),
+              orderId, issueType, description, supportTicketId, timestamp: new Date()
             });
           }
-          
           socket.emit("issue_reported", { success: true });
-        } catch (error) {
-          console.error("Report issue error:", error);
-          socket.emit("issue_reported", { success: false, error: error.message });
+        } catch (err) {
+          console.error("report_issue error:", err);
+          socket.emit("issue_reported", { success: false, error: err.message });
         }
       });
-    }
+    } // end-partner events
 
-    // Customer Events
-    if (socket.userType === 'customer') {
-      
-      // Customer requests delivery update
+
+    /* ------------------------------------------------------
+       Customer events
+    ------------------------------------------------------ */
+    if (socket.userType === "customer") {
       socket.on("request_delivery_update", async (orderId) => {
         try {
-          const tracking = await DeliveryTrackingModel.findOne({ orderId })
+          const tracking = await DeliveryTrackingModel
+            .findOne({ orderId })
             .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation");
-          
+
           if (tracking) {
             socket.emit("delivery_update", {
               orderId,
-              status: tracking.status,
-              timeline: tracking.timeline,
+              status         : tracking.status,
+              timeline       : tracking.timeline,
               currentLocation: tracking.lastLocationUpdate,
-              estimatedTime: tracking.metrics.estimatedDeliveryTime,
-              partner: tracking.deliveryPartnerId,
+              estimatedTime  : tracking.metrics.estimatedDeliveryTime,
+              partner        : tracking.deliveryPartnerId
             });
           }
-        } catch (error) {
-          console.error("Request delivery update error:", error);
-        }
+        } catch (err) { console.error("request_delivery_update:", err); }
       });
 
-      // Customer provides delivery feedback
-      socket.on("delivery_feedback", async (data) => {
+      socket.on("delivery_feedback", async ({ orderId, rating, comment }) => {
         try {
-          const { orderId, rating, comment } = data;
-          
           const tracking = await DeliveryTrackingModel.findOne({ orderId });
           if (tracking) {
             tracking.deliveryDetails.customerFeedback = {
-              rating,
-              comment,
-              timestamp: new Date(),
+              rating, comment, timestamp: new Date()
             };
             await tracking.save();
-            
-            // Update partner's rating
+
             const partner = await DeliveryPartnerModel.findById(tracking.deliveryPartnerId);
-            if (partner) {
-              await partner.updateRating(rating);
-            }
+            if (partner) await partner.updateRating(rating);
           }
-          
           socket.emit("feedback_submitted", { success: true });
-        } catch (error) {
-          console.error("Delivery feedback error:", error);
-          socket.emit("feedback_submitted", { success: false, error: error.message });
+        } catch (err) {
+          console.error("delivery_feedback error:", err);
+          socket.emit("feedback_submitted", { success: false, error: err.message });
         }
       });
     }
 
-    // Handle disconnection
+    /* ---------------- handle disconnect ------------------- */
     socket.on("disconnect", () => {
-      console.log(`${socket.userType} disconnected:`, socket.userId);
-      
-      if (socket.userType === 'customer') {
-        connectedUsers.delete(socket.userId);
-      } else if (socket.userType === 'partner') {
+      console.log(`[SOCKET] ${socket.userType} ${socket.userId} disconnected`);
+      if (socket.userType === "customer") connectedUsers.delete(socket.userId);
+      if (socket.userType === "partner") {
         connectedPartners.delete(socket.userId);
-        
-        // Update partner's offline status
         DeliveryPartnerModel.findByIdAndUpdate(socket.userId, {
           socketId: "",
-          'availability.isOnline': false,
-          'availability.lastSeen': new Date(),
+          "availability.isOnline": false,
+          "availability.lastSeen": new Date()
         }).catch(console.error);
       }
-      
-      // Clean up order tracking
-      orderTracking.forEach((socketIds, orderId) => {
-        socketIds.delete(socket.id);
-        if (socketIds.size === 0) {
-          orderTracking.delete(orderId);
-        }
+      orderTracking.forEach((set, orderId) => {
+        set.delete(socket.id);
+        if (set.size === 0) orderTracking.delete(orderId);
       });
     });
   });
@@ -388,40 +339,12 @@ const initializeSocket = (server) => {
   return io;
 };
 
-// Helper functions to emit events from other parts of the application
-const emitToOrder = (orderId, event, data) => {
-  if (io) {
-    io.to(`order_${orderId}`).emit(event, data);
-  }
-};
-
-const emitToUser = (userId, event, data) => {
-  if (io && connectedUsers.has(userId)) {
-    const socketId = connectedUsers.get(userId);
-    io.to(socketId).emit(event, data);
-  }
-};
-
-const emitToPartner = (partnerId, event, data) => {
-  if (io && connectedPartners.has(partnerId)) {
-    const socketId = connectedPartners.get(partnerId);
-    io.to(socketId).emit(event, data);
-  }
-};
-
-const emitToAllPartners = (event, data) => {
-  if (io) {
-    connectedPartners.forEach((socketId) => {
-      io.to(socketId).emit(event, data);
-    });
-  }
-};
-
-const emitToAdmins = (event, data) => {
-  if (io) {
-    io.emit(event, data); // For now, broadcast to all connected users
-  }
-};
+/* ------- helpers for other modules ----------------------- */
+const emitToOrder      = (orderId, event, data) =>  io?.to(`order_${orderId}`).emit(event, data);
+const emitToUser       = (userId,  event, data) =>  io?.to(connectedUsers.get(userId)    ?? "").emit(event, data);
+const emitToPartner    = (pid,     event, data) =>  io?.to(connectedPartners.get(pid)    ?? "").emit(event, data);
+const emitToAllPartners= (event,   data)       =>  connectedPartners.forEach(id => io?.to(id).emit(event, data));
+const emitToAdmins     = (event,   data)       =>  io?.emit(event, data);
 
 module.exports = {
   initializeSocket,
@@ -430,7 +353,7 @@ module.exports = {
   emitToPartner,
   emitToAllPartners,
   emitToAdmins,
-  getConnectedUsers: () => connectedUsers,
+  getConnectedUsers   : () => connectedUsers,
   getConnectedPartners: () => connectedPartners,
-  getOrderTracking: () => orderTracking,
+  getOrderTracking    : () => orderTracking
 };

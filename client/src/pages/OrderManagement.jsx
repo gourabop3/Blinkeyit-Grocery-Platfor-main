@@ -14,6 +14,7 @@ import SummaryApi from "../common/SummaryApi";
 import AxiosToastError from "../utils/AxiosToastError";
 import Loading from "../components/Loading";
 import toast from "react-hot-toast";
+import { DisplayPriceInRupees } from '../utils/DisplayPriceInRupees';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
@@ -211,7 +212,7 @@ const OrderManagement = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-3">Total Amount</h3>
               <p className="text-2xl font-bold text-green-600">
-                ₹{order.totalAmt.toLocaleString()}
+                {DisplayPriceInRupees(order.totalAmt)}
               </p>
             </div>
           </div>
@@ -338,7 +339,7 @@ const OrderManagement = () => {
                     {formatDate(order.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ₹{order.totalAmt.toLocaleString()}
+                    {DisplayPriceInRupees(order.totalAmt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span

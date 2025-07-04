@@ -17,6 +17,7 @@ import SummaryApi from "../common/SummaryApi";
 import AxiosToastError from "../utils/AxiosToastError";
 import Loading from "../components/Loading";
 import toast from "react-hot-toast";
+import { DisplayPriceInRupees } from '../utils/DisplayPriceInRupees';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -276,7 +277,7 @@ const UserManagement = () => {
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">
-                  ₹{user.totalSpent.toLocaleString()}
+                  {DisplayPriceInRupees(user.totalSpent)}
                 </p>
                 <p className="text-gray-600">Total Spent</p>
               </div>
@@ -435,7 +436,7 @@ const UserManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div>{user.totalOrders}</div>
                     <div className="text-xs text-gray-500">
-                      ₹{user.totalSpent.toLocaleString()}
+                      {DisplayPriceInRupees(user.totalSpent)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

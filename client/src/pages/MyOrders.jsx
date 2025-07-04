@@ -5,6 +5,7 @@ import { FiPackage, FiTruck, FiCheck, FiClock, FiSearch, FiMapPin } from "react-
 import { MdCancel } from "react-icons/md";
 import NoData from "../components/NoData";
 import DeliveryTracker from "../components/DeliveryTracker";
+import { DisplayPriceInRupees } from '../utils/DisplayPriceInRupees';
 
 const MyOrders = () => {
   const navigate = useNavigate();
@@ -181,7 +182,7 @@ const MyOrders = () => {
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-green-600">
-                  ₹{order.totalAmt.toLocaleString()}
+                  {DisplayPriceInRupees(order.totalAmt)}
                 </p>
                 <span
                   className={`inline-flex items-center px-2 py-1 text-sm font-medium rounded-full border ${getStatusColor(
@@ -302,7 +303,7 @@ const MyOrders = () => {
                       {order.order_status}
                     </span>
                     <p className="text-xl font-bold text-green-600">
-                      ₹{order.totalAmt.toLocaleString()}
+                      {DisplayPriceInRupees(order.totalAmt)}
                     </p>
                     <button
                       onClick={() => {

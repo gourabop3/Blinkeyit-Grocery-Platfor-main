@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import DeliveryMap from '../components/DeliveryMap';
 import StatusBadge from '../components/StatusBadge';
 import OrderTimeline from '../components/OrderTimeline';
+import { DisplayPriceInRupees } from '../utils/DisplayPriceInRupees';
 
 const TrackOrder = () => {
   const { orderId } = useParams();
@@ -439,7 +440,7 @@ const TrackOrder = () => {
             <div>
               <div className="text-sm text-gray-500">Order Total</div>
               <div className="font-semibold text-gray-900">
-                ₹{trackingData.orderId?.totalAmt?.toFixed(2)}
+                {DisplayPriceInRupees(trackingData.orderId?.totalAmt)}
               </div>
             </div>
             <div>

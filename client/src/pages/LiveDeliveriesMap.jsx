@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -27,6 +27,23 @@ const LiveDeliveriesMap = () => {
   const { liveDeliveries } = useSocket();
   const orders = Object.values(liveDeliveries);
 
+  // Admin current location
+  const [adminLocation, setAdminLocation] = useState(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setAdminLocation([pos.coords.latitude, pos.coords.longitude]);
+        },
+        (err) => {
+          console.warn('[ADMIN][LIVE] Geolocation error:', err);
+        },
+        { enableHighAccuracy: true, maximumAge: 60000 }
+      );
+    }
+  }, []);
+
   // Debug: log whenever liveDeliveries changes
   useEffect(() => {
     console.log('[ADMIN][LIVE] liveDeliveries updated. Count =', orders.length, liveDeliveries);
@@ -36,9 +53,12 @@ const LiveDeliveriesMap = () => {
     <div className="p-6"><h1 className="text-xl font-semibold">No active deliveries</h1></div>
   );
 
-  // Positions for bounds
-  const positions = orders.map(o => [o.location.latitude, o.location.longitude]);
-  const center = positions[0];
+  // Positions for bounds (include admin if available)
+  const positions = [
+    ...orders.map(o => [o.location.latitude, o.location.longitude]),
+    ...(adminLocation ? [adminLocation] : [])
+  ];
+  const center = adminLocation || positions[0];
 
   return (
     <div className="p-4">
@@ -67,6 +87,13 @@ const LiveDeliveriesMap = () => {
             )}
           </React.Fragment>
         ))}
+
+        {/* Admin location marker */}
+        {adminLocation && (
+          <Marker position={adminLocation} icon={L.icon({ iconUrl: markerIcon, shadowUrl: markerShadow })}>
+            <Popup>You (Admin)</Popup>
+          </Marker>
+        )}
       </MapContainer>
     </div>
   );

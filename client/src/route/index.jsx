@@ -16,6 +16,7 @@ import CategoryPage from "../pages/CategoryPage";
 import SubCategoryPage from "../pages/SubCategoryPage";
 import UploadProduct from "../pages/UploadProduct";
 import ProductAdmin from "../pages/ProductAdmin";
+import CouponManagement from "../pages/CouponManagement";
 import AdminPermision from "../layouts/AdminPermision";
 import AdminLayout from "../layouts/AdminLayout";
 import NewAdminDashboard from "../pages/NewAdminDashboard";
@@ -134,7 +135,7 @@ const router = createBrowserRouter([
           },
           {
             path: "coupons",
-            element: <div className="p-6"><h1 className="text-2xl font-bold">Coupon Management</h1><p className="text-gray-600">Coming soon...</p></div>,
+            element: <CouponManagement />,
           },
           {
             path: "analytics",

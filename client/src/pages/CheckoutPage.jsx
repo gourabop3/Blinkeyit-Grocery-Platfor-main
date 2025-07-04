@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { FiCreditCard, FiTruck, FiLoader } from 'react-icons/fi'
+import { MdDiscount } from 'react-icons/md'
 
 const CheckoutPage = () => {
   const { notDiscountTotalPrice, totalPrice, totalQty, fetchCartItem,fetchOrder } = useGlobalContext()
@@ -20,6 +21,11 @@ const CheckoutPage = () => {
   const navigate = useNavigate()
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [isProcessingCOD, setIsProcessingCOD] = useState(false)
+
+  // Coupon handling
+  const [couponCode, setCouponCode] = useState('')
+  const [couponApplied, setCouponApplied] = useState(null) // {discountAmount,newTotal}
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
 
   const handleCashOnDelivery = async() => {
       try {
@@ -137,6 +143,32 @@ const CheckoutPage = () => {
     }
   }
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Enter a coupon code');
+      return;
+    }
+    try {
+      setIsApplyingCoupon(true);
+      const response = await Axios({
+        ...SummaryApi.applyCoupon,
+        data: {
+          code: couponCode.trim(),
+          orderTotal: totalPrice,
+        },
+      });
+      if (response.data.success) {
+        setCouponApplied(response.data.data);
+        toast.success('Coupon applied');
+      }
+    } catch (err) {
+      AxiosToastError(err);
+      setCouponApplied(null);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
   return (
     <section className='bg-blue-50 min-h-screen'>
       <div className='container mx-auto p-4 flex flex-col lg:flex-row w-full gap-5 justify-between'>
@@ -200,9 +232,15 @@ const CheckoutPage = () => {
                 <p className='flex items-center gap-2 text-green-600 font-medium'>Free</p>
               </div>
               <hr className="my-3" />
+              {couponApplied && (
+                <div className='flex gap-4 justify-between text-green-600'>
+                  <p>Coupon Discount</p>
+                  <p>-{DisplayPriceInRupees(couponApplied.discountAmount)}</p>
+                </div>
+              )}
               <div className='font-semibold flex items-center justify-between gap-4 text-lg'>
                 <p>Grand total</p>
-                <p className="text-blue-600">{DisplayPriceInRupees(totalPrice)}</p>
+                <p className="text-blue-600">{DisplayPriceInRupees(couponApplied ? couponApplied.newTotal : totalPrice)}</p>
               </div>
             </div>
           </div>
@@ -243,6 +281,28 @@ const CheckoutPage = () => {
                 </>
               )}
             </button>
+          </div>
+
+          {/* Coupon input */}
+          <div className='mt-4'>
+            <label className='block text-sm font-medium mb-1'>Have a coupon?</label>
+            <div className='flex gap-2'>
+              <input
+                type='text'
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder='ENTER CODE'
+                className='flex-1 border rounded px-3 py-2'
+              />
+              <button
+                type='button'
+                onClick={handleApplyCoupon}
+                className='inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-60'
+                disabled={isApplyingCoupon}
+              >
+                <MdDiscount /> {isApplyingCoupon ? 'Applying...' : 'Apply'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -23,6 +23,7 @@ const dashboardRouter = require("./routes/dashboard.route");
 const reviewRouter = require("./routes/review.route");
 const wishlistRouter = require("./routes/wishlist.route");
 const loyaltyRouter = require("./routes/loyalty.route");
+const couponRouter = require("./routes/coupon.route.js");
 // Delivery system routes
 const deliveryPartnerRouter = require("./routes/deliveryPartner.routes");
 const deliveryTrackingRouter = require("./routes/deliveryTracking.routes");
@@ -101,6 +102,8 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/loyalty", loyaltyRouter);
+// Coupon system
+app.use("/api/coupon", couponRouter);
 // Delivery system routes
 app.use("/api/delivery-partner", deliveryPartnerRouter);
 app.use("/api/delivery-tracking", deliveryTrackingRouter);

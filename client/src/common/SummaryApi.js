@@ -353,6 +353,28 @@ const SummaryApi = {
     url: "/api/delivery-tracking/admin/analytics",
     method: "get",
   },
+
+  // Coupon APIs
+  createCoupon: {
+    url: "/api/coupon/admin/create",
+    method: "post",
+  },
+  listCoupons: {
+    url: "/api/coupon/admin/list",
+    method: "get",
+  },
+  updateCoupon: {
+    url: "/api/coupon/admin",
+    method: "put", // will append "/:couponId" dynamically
+  },
+  deleteCoupon: {
+    url: "/api/coupon/admin",
+    method: "delete", // will append "/:couponId" dynamically
+  },
+  applyCoupon: {
+    url: "/api/coupon/apply",
+    method: "post",
+  },
 };
 
 export default SummaryApi;

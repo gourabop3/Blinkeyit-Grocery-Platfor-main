@@ -7,9 +7,9 @@ const { emitToOrder, emitToUser } = require("../config/socket");
 const getTrackingByOrderController = async (request, response) => {
   try {
     const { orderId } = request.params;
-    const userId = request.userId;
+    const userId = request.userId; // This may be undefined for public access
 
-    console.log('🔍 Delivery Tracking Request:', { orderId, userId });
+    console.log('🔍 Delivery Tracking Request:', { orderId, userId: userId || 'public' });
 
     // First, find the order by orderId (user-facing) or _id (MongoDB ObjectId)
     let order;
@@ -46,8 +46,8 @@ const getTrackingByOrderController = async (request, response) => {
       assignedPartner: !!order.assignedDeliveryPartner 
     });
 
-    // Verify user owns this order or is admin
-    if(userId) {
+    // Verify user owns this order or is admin (only if user is logged in)
+    if (userId) {
       if (order.userId.toString() !== userId && request.userRole !== 'admin') {
         console.log('🚫 Unauthorized access attempt:', { orderUserId: order.userId, requestUserId: userId });
         return response.status(403).json({

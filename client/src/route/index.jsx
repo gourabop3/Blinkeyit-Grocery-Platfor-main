@@ -30,6 +30,7 @@ import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import VerifyEmail from "../pages/VerifyEmail";
 import TrackOrder from "../pages/TrackOrder";
+import AddDeliveryPartner from "../pages/AddDeliveryPartner";
 import { Navigate } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -131,6 +132,10 @@ const router = createBrowserRouter([
           {
             path: "product",
             element: <ProductAdmin />,
+          },
+          {
+            path: "partners/add",
+            element: <AddDeliveryPartner />,
           },
           {
             path: "coupons",

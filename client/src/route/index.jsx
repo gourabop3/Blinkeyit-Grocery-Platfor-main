@@ -22,7 +22,6 @@ import NewAdminDashboard from "../pages/NewAdminDashboard";
 import OrderManagement from "../pages/OrderManagement";
 import UserManagement from "../pages/UserManagement";
 import AdminDiagnostic from "../pages/AdminDiagnostic";
-import LiveDeliveriesMap from "../pages/LiveDeliveriesMap";
 import ProductListPage from "../pages/ProductListPage";
 import ProductDisplayPage from "../pages/ProductDisplayPage";
 import CartMobile from "../pages/CartMobile";
@@ -31,6 +30,7 @@ import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import VerifyEmail from "../pages/VerifyEmail";
 import TrackOrder from "../pages/TrackOrder";
+import { Navigate } from "react-router-dom";
 
 const router = createBrowserRouter([
   {
@@ -154,7 +154,7 @@ const router = createBrowserRouter([
           },
           {
             path: "delivery-tracking",
-            element: <LiveDeliveriesMap />,
+            element: <Navigate to="/dashboard/admin" replace />,
           },
         ],
       },

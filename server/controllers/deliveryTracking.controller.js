@@ -9,12 +9,29 @@ const getTrackingByOrderController = async (request, response) => {
     const { orderId } = request.params;
     const userId = request.userId;
 
-    // Verify user owns this order or is admin
-    const order = await OrderModel.findById(orderId)
-      .populate("delivery_address")
-      .populate("assignedDeliveryPartner", "name mobile vehicleDetails currentLocation statistics");
+    console.log('🔍 Delivery Tracking Request:', { orderId, userId });
+
+    // First, find the order by orderId (user-facing) or _id (MongoDB ObjectId)
+    let order;
+    
+    // Try to find by MongoDB ObjectId first
+    if (orderId.match(/^[0-9a-fA-F]{24}$/)) {
+      order = await OrderModel.findById(orderId)
+        .populate("delivery_address")
+        .populate("assignedDeliveryPartner", "name mobile vehicleDetails currentLocation statistics");
+      console.log('📄 Found order by ObjectId:', order ? order.orderId : 'not found');
+    }
+    
+    // If not found, try to find by user-facing orderId
+    if (!order) {
+      order = await OrderModel.findOne({ orderId: orderId })
+        .populate("delivery_address")
+        .populate("assignedDeliveryPartner", "name mobile vehicleDetails currentLocation statistics");
+      console.log('📄 Found order by orderId field:', order ? order.orderId : 'not found');
+    }
     
     if (!order) {
+      console.log('❌ Order not found for:', orderId);
       return response.status(404).json({
         message: "Order not found",
         error: true,
@@ -22,8 +39,17 @@ const getTrackingByOrderController = async (request, response) => {
       });
     }
 
+    console.log('✅ Order found:', { 
+      _id: order._id, 
+      orderId: order.orderId, 
+      status: order.order_status,
+      assignedPartner: !!order.assignedDeliveryPartner 
+    });
+
+    // Verify user owns this order or is admin
     if(userId) {
       if (order.userId.toString() !== userId && request.userRole !== 'admin') {
+        console.log('🚫 Unauthorized access attempt:', { orderUserId: order.userId, requestUserId: userId });
         return response.status(403).json({
           message: "Unauthorized access to order tracking",
           error: true,
@@ -32,14 +58,18 @@ const getTrackingByOrderController = async (request, response) => {
       }
     }
 
-    let tracking = await DeliveryTrackingModel.findOne({ orderId })
+    // Look for existing tracking record using the MongoDB _id
+    let tracking = await DeliveryTrackingModel.findOne({ orderId: order._id })
       .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation statistics")
       .populate("orderId", "orderId totalAmt estimatedDeliveryTime deliveryOTP");
+
+    console.log('📦 Existing tracking found:', !!tracking);
 
     // If no tracking record exists, create a basic one or return order-based tracking
     if (!tracking) {
       // Check if order has delivery partner assigned
       if (order.assignedDeliveryPartner) {
+        console.log('🚚 Creating new tracking record for assigned order');
         // Create basic tracking record for assigned orders
         tracking = new DeliveryTrackingModel({
           orderId: order._id,
@@ -50,14 +80,18 @@ const getTrackingByOrderController = async (request, response) => {
             longitude: order.delivery_address?.longitude || 77.2090,
             address: order.delivery_address?.address_line || "Customer Address",
           },
-          storeLocation: order.storeLocation,
+          storeLocation: order.storeLocation || {
+            latitude: 28.6139,
+            longitude: 77.2090,
+            address: "Store Location"
+          },
           timeline: [{
             status: "assigned",
             timestamp: order.orderTracking?.assignmentTime || new Date(),
             notes: "Delivery partner assigned"
           }],
           metrics: {
-            estimatedDeliveryTime: order.estimatedDeliveryTime || order.getEstimatedDeliveryTime()
+            estimatedDeliveryTime: order.estimatedDeliveryTime || (order.getEstimatedDeliveryTime ? order.getEstimatedDeliveryTime() : new Date(Date.now() + 45 * 60000))
           }
         });
         await tracking.save();
@@ -66,7 +100,10 @@ const getTrackingByOrderController = async (request, response) => {
         tracking = await DeliveryTrackingModel.findById(tracking._id)
           .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation statistics")
           .populate("orderId", "orderId totalAmt estimatedDeliveryTime deliveryOTP");
+        
+        console.log('✅ New tracking record created:', tracking._id);
       } else {
+        console.log('📋 Returning order-based tracking for unassigned order');
         // Return order-based tracking for unassigned orders
         return response.json({
           message: "Order tracking retrieved (no delivery partner assigned yet)",
@@ -75,7 +112,7 @@ const getTrackingByOrderController = async (request, response) => {
           data: {
             orderId: order,
             deliveryPartnerId: null,
-            status: order.order_status.toLowerCase().replace('_', '_'),
+            status: order.order_status.toLowerCase().replace(/_/g, '_'),
             timeline: [
               {
                 status: "processing",
@@ -93,9 +130,13 @@ const getTrackingByOrderController = async (request, response) => {
               longitude: order.delivery_address?.longitude || 77.2090,
               address: order.delivery_address?.address_line || "Customer Address",
             },
-            storeLocation: order.storeLocation,
+            storeLocation: order.storeLocation || {
+              latitude: 28.6139,
+              longitude: 77.2090,
+              address: "Store Location"
+            },
             metrics: {
-              estimatedDeliveryTime: order.estimatedDeliveryTime || order.getEstimatedDeliveryTime()
+              estimatedDeliveryTime: order.estimatedDeliveryTime || (order.getEstimatedDeliveryTime ? order.getEstimatedDeliveryTime() : new Date(Date.now() + 45 * 60000))
             },
             liveUpdates: {
               message: "Order is being prepared. Delivery partner will be assigned soon."
@@ -139,6 +180,8 @@ const getTrackingByOrderController = async (request, response) => {
       }
     }
 
+    console.log('🎯 Sending tracking response with status:', tracking.status);
+
     return response.json({
       message: "Delivery tracking retrieved successfully",
       error: false,
@@ -149,6 +192,7 @@ const getTrackingByOrderController = async (request, response) => {
       },
     });
   } catch (error) {
+    console.error('❌ Delivery tracking error:', error);
     return response.status(500).json({
       message: error.message || error,
       error: true,

@@ -120,7 +120,12 @@ const TrackOrder = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(baseURL + SummaryApi.getDeliveryTracking.url.replace(':orderId', orderId), {
+      
+      const url = baseURL + SummaryApi.getDeliveryTracking.url.replace(':orderId', orderId);
+      console.log('🔍 Fetching tracking data from:', url);
+      console.log('📋 Order ID from URL params:', orderId);
+      
+      const response = await fetch(url, {
         method: SummaryApi.getDeliveryTracking.method,
         credentials: 'include',
         headers: {
@@ -128,21 +133,25 @@ const TrackOrder = () => {
         },
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📦 Response data:', data);
 
       if (data.success) {
         setTrackingData(data.data);
+        console.log('✅ Tracking data loaded successfully');
         
         // Show OTP input if delivery partner has arrived
         if (data.data.status === 'arrived') {
           setShowOTPInput(true);
         }
       } else {
+        console.log('❌ API returned error:', data.message);
         setError(data.message || 'Failed to fetch tracking data');
       }
     } catch (err) {
+      console.error('❌ Network error:', err);
       setError('Failed to fetch tracking data. Please check your connection.');
-      console.error('Tracking fetch error:', err);
     } finally {
       setLoading(false);
     }

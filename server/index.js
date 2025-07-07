@@ -26,6 +26,8 @@ const loyaltyRouter = require("./routes/loyalty.route");
 // Delivery system routes
 const deliveryPartnerRouter = require("./routes/deliveryPartner.routes");
 const deliveryTrackingRouter = require("./routes/deliveryTracking.routes");
+// Coupon system routes
+const couponRouter = require("./routes/coupon.route");
 
 const PORT = process.env.PORT || 5000;
 
@@ -104,6 +106,8 @@ app.use("/api/loyalty", loyaltyRouter);
 // Delivery system routes
 app.use("/api/delivery-partner", deliveryPartnerRouter);
 app.use("/api/delivery-tracking", deliveryTrackingRouter);
+// Coupon system routes
+app.use("/api/coupon", couponRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

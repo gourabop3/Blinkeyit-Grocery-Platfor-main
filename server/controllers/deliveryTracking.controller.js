@@ -10,7 +10,10 @@ const getTrackingByOrderController = async (request, response) => {
     const userId = request.userId;
 
     // Verify user owns this order or is admin
-    const order = await OrderModel.findById(orderId);
+    const order = await OrderModel.findById(orderId)
+      .populate("delivery_address")
+      .populate("assignedDeliveryPartner", "name mobile vehicleDetails currentLocation statistics");
+    
     if (!order) {
       return response.status(404).json({
         message: "Order not found",
@@ -29,16 +32,77 @@ const getTrackingByOrderController = async (request, response) => {
       }
     }
 
-    const tracking = await DeliveryTrackingModel.findOne({ orderId })
+    let tracking = await DeliveryTrackingModel.findOne({ orderId })
       .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation statistics")
       .populate("orderId", "orderId totalAmt estimatedDeliveryTime deliveryOTP");
 
+    // If no tracking record exists, create a basic one or return order-based tracking
     if (!tracking) {
-      return response.status(404).json({
-        message: "Delivery tracking not found",
-        error: true,
-        success: false,
-      });
+      // Check if order has delivery partner assigned
+      if (order.assignedDeliveryPartner) {
+        // Create basic tracking record for assigned orders
+        tracking = new DeliveryTrackingModel({
+          orderId: order._id,
+          deliveryPartnerId: order.assignedDeliveryPartner._id,
+          status: "assigned",
+          customerLocation: {
+            latitude: order.delivery_address?.latitude || 28.6139,
+            longitude: order.delivery_address?.longitude || 77.2090,
+            address: order.delivery_address?.address_line || "Customer Address",
+          },
+          storeLocation: order.storeLocation,
+          timeline: [{
+            status: "assigned",
+            timestamp: order.orderTracking?.assignmentTime || new Date(),
+            notes: "Delivery partner assigned"
+          }],
+          metrics: {
+            estimatedDeliveryTime: order.estimatedDeliveryTime || order.getEstimatedDeliveryTime()
+          }
+        });
+        await tracking.save();
+        
+        // Populate the tracking after saving
+        tracking = await DeliveryTrackingModel.findById(tracking._id)
+          .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation statistics")
+          .populate("orderId", "orderId totalAmt estimatedDeliveryTime deliveryOTP");
+      } else {
+        // Return order-based tracking for unassigned orders
+        return response.json({
+          message: "Order tracking retrieved (no delivery partner assigned yet)",
+          error: false,
+          success: true,
+          data: {
+            orderId: order,
+            deliveryPartnerId: null,
+            status: order.order_status.toLowerCase().replace('_', '_'),
+            timeline: [
+              {
+                status: "processing",
+                timestamp: order.createdAt,
+                notes: "Order placed successfully"
+              },
+              ...(order.order_status !== "Processing" ? [{
+                status: order.order_status.toLowerCase(),
+                timestamp: order.updatedAt,
+                notes: `Order status: ${order.order_status}`
+              }] : [])
+            ],
+            customerLocation: {
+              latitude: order.delivery_address?.latitude || 28.6139,
+              longitude: order.delivery_address?.longitude || 77.2090,
+              address: order.delivery_address?.address_line || "Customer Address",
+            },
+            storeLocation: order.storeLocation,
+            metrics: {
+              estimatedDeliveryTime: order.estimatedDeliveryTime || order.getEstimatedDeliveryTime()
+            },
+            liveUpdates: {
+              message: "Order is being prepared. Delivery partner will be assigned soon."
+            }
+          },
+        });
+      }
     }
 
     // Calculate live distance and ETA if partner location is available

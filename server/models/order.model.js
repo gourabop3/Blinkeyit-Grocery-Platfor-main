@@ -56,6 +56,37 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    
+    // Coupon Information
+    appliedCoupon: {
+      couponId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Coupon",
+      },
+      code: String,
+      discountAmount: {
+        type: Number,
+        default: 0,
+      },
+      discountType: {
+        type: String,
+        enum: ["percentage", "fixed", "free_shipping", "bogo"],
+      },
+      appliedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+    
+    // Pricing breakdown
+    pricing: {
+      itemsTotal: { type: Number, default: 0 },
+      discountAmount: { type: Number, default: 0 },
+      deliveryCharges: { type: Number, default: 0 },
+      taxAmount: { type: Number, default: 0 },
+      finalAmount: { type: Number, default: 0 },
+    },
+    
     invoice_receipt: {
       type: String,
       default: "",

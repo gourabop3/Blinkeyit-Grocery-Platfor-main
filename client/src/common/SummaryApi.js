@@ -353,6 +353,55 @@ const SummaryApi = {
     url: "/api/delivery-tracking/admin/analytics",
     method: "get",
   },
+
+  // Coupon System APIs
+  // User coupon APIs
+  getActiveCoupons: {
+    url: "/api/coupon/user/available",
+    method: "get",
+  },
+  validateCoupon: {
+    url: "/api/coupon/validate",
+    method: "post",
+  },
+  applyCoupon: {
+    url: "/api/coupon/apply",
+    method: "post",
+  },
+
+  // Admin coupon APIs
+  createCoupon: {
+    url: "/api/coupon",
+    method: "post",
+  },
+  getAllCoupons: {
+    url: "/api/coupon",
+    method: "get",
+  },
+  getCouponById: {
+    url: "/api/coupon",
+    method: "get",
+  },
+  updateCoupon: {
+    url: "/api/coupon",
+    method: "put",
+  },
+  deleteCoupon: {
+    url: "/api/coupon",
+    method: "delete",
+  },
+  toggleCouponStatus: {
+    url: "/api/coupon",
+    method: "patch",
+  },
+  getCouponStats: {
+    url: "/api/coupon",
+    method: "get",
+  },
+  generateBulkCoupons: {
+    url: "/api/coupon/bulk-generate",
+    method: "post",
+  },
 };
 
 export default SummaryApi;

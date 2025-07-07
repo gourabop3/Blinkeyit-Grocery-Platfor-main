@@ -31,6 +31,7 @@ import Cancel from "../pages/Cancel";
 import VerifyEmail from "../pages/VerifyEmail";
 import TrackOrder from "../pages/TrackOrder";
 import AddDeliveryPartner from "../pages/AddDeliveryPartner";
+import CouponManagement from "../pages/admin/CouponManagement";
 import { Navigate } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -139,7 +140,7 @@ const router = createBrowserRouter([
           },
           {
             path: "coupons",
-            element: <div className="p-6"><h1 className="text-2xl font-bold">Coupon Management</h1><p className="text-gray-600">Coming soon...</p></div>,
+            element: <CouponManagement />,
           },
           {
             path: "analytics",

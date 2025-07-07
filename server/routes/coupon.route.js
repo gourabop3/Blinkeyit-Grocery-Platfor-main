@@ -12,8 +12,8 @@ const {
   getCouponStatsController,
   generateBulkCouponsController,
 } = require("../controllers/coupon.controller");
-const authToken = require("../middleware/authToken");
-const adminAuth = require("../middleware/adminAuth");
+const authToken = require("../middlewares/auth.middleware");
+const adminAuth = require("../middlewares/admin.middleware");
 
 const couponRouter = express.Router();
 

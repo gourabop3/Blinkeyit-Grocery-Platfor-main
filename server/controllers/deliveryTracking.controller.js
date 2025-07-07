@@ -347,48 +347,46 @@ const verifyDeliveryOTPController = async (request, response) => {
       });
     }
 
-    if (!order.deliveryOTP || !order.deliveryOTP.code) {
+    // Use the enhanced OTP verification method from the order model
+    const verificationResult = order.verifyDeliveryOTP(otp);
+    
+    if (!verificationResult.success) {
       return response.status(400).json({
-        message: "No OTP required for this order",
+        message: verificationResult.message,
         error: true,
         success: false,
       });
     }
 
-    if (order.deliveryOTP.code !== otp) {
-      return response.status(400).json({
-        message: "Invalid OTP",
-        error: true,
-        success: false,
-      });
-    }
-
-    if (new Date() > order.deliveryOTP.expiresAt) {
-      return response.status(400).json({
-        message: "OTP expired",
-        error: true,
-        success: false,
-      });
-    }
-
-    // Mark OTP as verified
-    order.deliveryOTP.verified = true;
+    // Save the order with updated OTP status
     await order.save();
 
-    // Notify delivery partner that OTP is verified
-    emitToOrder(orderId, "otp_verified", {
-      orderId,
-      verified: true,
-      timestamp: new Date(),
-    });
+    // Update delivery tracking status to delivered if OTP is verified
+    const tracking = await DeliveryTrackingModel.findOne({ orderId });
+    if (tracking) {
+      // Update tracking status to delivered
+      await tracking.updateStatus("delivered", null, "OTP verified - delivery completed");
+      
+      // Update order status
+      await order.updateOrderStatus("Delivered");
+
+      // Emit real-time update
+      emitToOrder(orderId, "delivery_completed", {
+        orderId,
+        status: "delivered",
+        timestamp: new Date(),
+        otpVerified: true,
+      });
+    }
 
     return response.json({
-      message: "OTP verified successfully",
+      message: "OTP verified successfully! Delivery completed.",
       error: false,
       success: true,
       data: {
         verified: true,
         orderId,
+        status: "delivered",
       },
     });
   } catch (error) {

@@ -1,6 +1,5 @@
 const DeliveryTrackingModel = require("../models/deliveryTracking.model");
 const OrderModel = require("../models/order.model");
-const DeliveryPartnerModel = require("../models/deliveryPartner.model");
 const { emitToOrder, emitToUser } = require("../config/socket");
 
 // Get delivery tracking for an order
@@ -17,16 +16,14 @@ const getTrackingByOrderController = async (request, response) => {
     // Try to find by MongoDB ObjectId first
     if (orderId.match(/^[0-9a-fA-F]{24}$/)) {
       order = await OrderModel.findById(orderId)
-        .populate("delivery_address")
-        .populate("assignedDeliveryPartner", "name mobile vehicleDetails currentLocation statistics");
+        .populate("delivery_address");
       console.log('📄 Found order by ObjectId:', order ? order.orderId : 'not found');
     }
     
     // If not found, try to find by user-facing orderId
     if (!order) {
       order = await OrderModel.findOne({ orderId: orderId })
-        .populate("delivery_address")
-        .populate("assignedDeliveryPartner", "name mobile vehicleDetails currentLocation statistics");
+        .populate("delivery_address");
       console.log('📄 Found order by orderId field:', order ? order.orderId : 'not found');
     }
     
@@ -42,8 +39,7 @@ const getTrackingByOrderController = async (request, response) => {
     console.log('✅ Order found:', { 
       _id: order._id, 
       orderId: order.orderId, 
-      status: order.order_status,
-      assignedPartner: !!order.assignedDeliveryPartner 
+      status: order.order_status
     });
 
     // Verify user owns this order or is admin (only if user is logged in)
@@ -60,58 +56,20 @@ const getTrackingByOrderController = async (request, response) => {
 
     // Look for existing tracking record using the MongoDB _id
     let tracking = await DeliveryTrackingModel.findOne({ orderId: order._id })
-      .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation statistics")
       .populate("orderId", "orderId totalAmt estimatedDeliveryTime deliveryOTP");
 
     console.log('📦 Existing tracking found:', !!tracking);
 
     // If no tracking record exists, create a basic one or return order-based tracking
     if (!tracking) {
-      // Check if order has delivery partner assigned
-      if (order.assignedDeliveryPartner) {
-        console.log('🚚 Creating new tracking record for assigned order');
-        // Create basic tracking record for assigned orders
-        tracking = new DeliveryTrackingModel({
-          orderId: order._id,
-          deliveryPartnerId: order.assignedDeliveryPartner._id,
-          status: "assigned",
-          customerLocation: {
-            latitude: order.delivery_address?.latitude || 28.6139,
-            longitude: order.delivery_address?.longitude || 77.2090,
-            address: order.delivery_address?.address_line || "Customer Address",
-          },
-          storeLocation: order.storeLocation || {
-            latitude: 28.6139,
-            longitude: 77.2090,
-            address: "Store Location"
-          },
-          timeline: [{
-            status: "assigned",
-            timestamp: order.orderTracking?.assignmentTime || new Date(),
-            notes: "Delivery partner assigned"
-          }],
-          metrics: {
-            estimatedDeliveryTime: order.estimatedDeliveryTime || (order.getEstimatedDeliveryTime ? order.getEstimatedDeliveryTime() : new Date(Date.now() + 45 * 60000))
-          }
-        });
-        await tracking.save();
-        
-        // Populate the tracking after saving
-        tracking = await DeliveryTrackingModel.findById(tracking._id)
-          .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation statistics")
-          .populate("orderId", "orderId totalAmt estimatedDeliveryTime deliveryOTP");
-        
-        console.log('✅ New tracking record created:', tracking._id);
-      } else {
-        console.log('📋 Returning order-based tracking for unassigned order');
+      console.log('📋 Creating basic tracking record for order');
         // Return order-based tracking for unassigned orders
         return response.json({
-          message: "Order tracking retrieved (no delivery partner assigned yet)",
+          message: "Order tracking retrieved",
           error: false,
           success: true,
           data: {
             orderId: order,
-            deliveryPartnerId: null,
             status: order.order_status.toLowerCase().replace(/_/g, '_'),
             timeline: [
               {
@@ -139,7 +97,7 @@ const getTrackingByOrderController = async (request, response) => {
               estimatedDeliveryTime: order.estimatedDeliveryTime || (order.getEstimatedDeliveryTime ? order.getEstimatedDeliveryTime() : new Date(Date.now() + 45 * 60000))
             },
             liveUpdates: {
-              message: "Order is being prepared. Delivery partner will be assigned soon."
+              message: "Order is being prepared."
             }
           },
         });
@@ -219,7 +177,6 @@ const getLiveLocationController = async (request, response) => {
     }
 
     const tracking = await DeliveryTrackingModel.findOne({ orderId })
-      .populate("deliveryPartnerId", "currentLocation");
 
     if (!tracking) {
       return response.status(404).json({
@@ -240,7 +197,6 @@ const getLiveLocationController = async (request, response) => {
         currentLocation: tracking.lastLocationUpdate,
         recentRoute,
         status: tracking.status,
-        partnerLocation: tracking.deliveryPartnerId?.currentLocation,
         customerLocation: tracking.customerLocation,
         storeLocation: tracking.storeLocation,
       },
@@ -272,7 +228,6 @@ const getDeliveryTimelineController = async (request, response) => {
 
     const tracking = await DeliveryTrackingModel.findOne({ orderId })
       .select("timeline status metrics deliveryDetails.customerFeedback")
-      .populate("deliveryPartnerId", "name mobile");
 
     if (!tracking) {
       return response.status(404).json({
@@ -291,7 +246,6 @@ const getDeliveryTimelineController = async (request, response) => {
         status: tracking.status,
         metrics: tracking.metrics,
         feedback: tracking.deliveryDetails.customerFeedback,
-        partner: tracking.deliveryPartnerId,
       },
     });
   } catch (error) {
@@ -332,7 +286,7 @@ const reportDeliveryIssueController = async (request, response) => {
     const supportTicketId = `ISSUE-${Date.now()}`;
     await tracking.reportIssue(issueType, description, supportTicketId);
 
-    // Notify delivery partner and admin
+    // Notify admin
     emitToOrder(orderId, "customer_reported_issue", {
       issueType,
       description,
@@ -524,7 +478,6 @@ const getAllActiveDeliveriesController = async (request, response) => {
     
     const deliveries = await DeliveryTrackingModel.find(filter)
       .populate("orderId", "orderId totalAmt createdAt")
-      .populate("deliveryPartnerId", "name mobile vehicleDetails currentLocation")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -565,9 +518,6 @@ const getDeliveryAnalyticsController = async (request, response) => {
       createdAt: { $gte: start, $lte: end },
     };
     
-    if (partnerId) {
-      filter.deliveryPartnerId = partnerId;
-    }
     
     // Overall analytics
     const analytics = await DeliveryTrackingModel.aggregate([

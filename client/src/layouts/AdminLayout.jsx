@@ -19,6 +19,8 @@ import {
   FiUser,
   FiLogOut,
   FiTruck,
+  FiCreditCard,
+  FiZap,
 } from "react-icons/fi";
 import { MdDiscount } from "react-icons/md";
 import Axios from "../utils/Axios";
@@ -82,6 +84,16 @@ const AdminLayout = () => {
       name: "Add Product",
       href: "/dashboard/admin/upload-product",
       icon: FiPlus,
+    },
+    {
+      name: "Recharge Products",
+      href: "/dashboard/admin/recharge-product",
+      icon: FiCreditCard,
+    },
+    {
+      name: "Add Recharge Product",
+      href: "/dashboard/admin/upload-recharge-product",
+      icon: FiZap,
     },
     {
       name: "Categories",

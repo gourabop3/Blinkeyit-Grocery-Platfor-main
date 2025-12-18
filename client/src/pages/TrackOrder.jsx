@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSocket } from '../context/SocketContext';
 import SummaryApi, { baseURL } from '../common/SummaryApi';
 import toast from 'react-hot-toast';
 import StatusBadge from '../components/StatusBadge';
@@ -9,14 +8,6 @@ import OrderTimeline from '../components/OrderTimeline';
 const TrackOrder = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { 
-    joinOrderTracking, 
-    leaveOrderTracking, 
-    getDeliveryUpdate,
-    requestDeliveryUpdate,
-    isConnected,
-    deliveryUpdates
-  } = useSocket();
 
   const [trackingData, setTrackingData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,42 +70,10 @@ const TrackOrder = () => {
 
   useEffect(() => {
     if (orderId) {
-      // Join order tracking room
-      joinOrderTracking(orderId);
-      
       // Fetch initial tracking data
       fetchTrackingData();
-      
-      // Request live updates
-      requestDeliveryUpdate(orderId);
-
-      return () => {
-        leaveOrderTracking(orderId);
-      };
     }
-  }, [orderId, isConnected]);
-
-  // Listen for real-time updates coming from context
-  useEffect(() => {
-    const deliveryUpdate = deliveryUpdates[orderId];
-    if (deliveryUpdate) {
-      setTrackingData(prev => ({
-        ...prev,
-        status: deliveryUpdate.status,
-        deliveryPartnerId: deliveryUpdate.partner || prev?.deliveryPartnerId,
-        liveUpdates: {
-          ...prev?.liveUpdates,
-          distanceToCustomer: deliveryUpdate.distanceToCustomer,
-          estimatedArrival: deliveryUpdate.estimatedArrival,
-          lastUpdate: deliveryUpdate.lastUpdate,
-        }
-      }));
-
-      if (deliveryUpdate.status === 'arrived') {
-        setShowOTPInput(true);
-      }
-    }
-  }, [deliveryUpdates, orderId]);
+  }, [orderId]);
 
   const fetchTrackingData = async () => {
     try {
@@ -210,15 +169,6 @@ const TrackOrder = () => {
     });
   };
 
-  const getEstimatedArrival = () => {
-    if (trackingData?.liveUpdates?.estimatedArrival) {
-      return formatTime(trackingData.liveUpdates.estimatedArrival);
-    }
-    if (trackingData?.metrics?.estimatedDeliveryTime) {
-      return formatTime(trackingData.metrics.estimatedDeliveryTime);
-    }
-    return 'Calculating...';
-  };
 
   if (loading) {
     return (
@@ -294,22 +244,6 @@ const TrackOrder = () => {
         {/* Status Badges */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <StatusBadge status={trackingData.status} />
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-            isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            <div className={`w-2 h-2 rounded-full mr-2 ${
-              isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-            }`}></div>
-            {isConnected ? 'Live Tracking' : 'Offline'}
-          </div>
-          {trackingData.liveUpdates?.distanceToCustomer && (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-              📍 {trackingData.liveUpdates.distanceToCustomer.toFixed(1)} km away
-            </span>
-          )}
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-            🕒 ETA {getEstimatedArrival()}
-          </span>
         </div>
 
         {/* Current Status Card */}
@@ -324,32 +258,7 @@ const TrackOrder = () => {
                 <p className="text-gray-600 text-lg">{currentStatus.description}</p>
               </div>
             </div>
-            {trackingData.liveUpdates?.estimatedArrival && (
-              <div className="text-right">
-                <div className="text-sm text-gray-500 font-medium">Estimated Delivery</div>
-                <div className="text-xl font-bold text-gray-900">{getEstimatedArrival()}</div>
-                <div className="text-sm text-gray-500">{formatDate(trackingData.liveUpdates.estimatedArrival)}</div>
-              </div>
-            )}
           </div>
-
-          {/* Distance Info */}
-          {trackingData.liveUpdates?.distanceToCustomer && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-blue-600 font-semibold">Distance to Your Location</div>
-                  <div className="text-3xl font-bold text-blue-900">
-                    {trackingData.liveUpdates.distanceToCustomer.toFixed(1)} km
-                  </div>
-                  <div className="text-sm text-blue-700">Live tracking active</div>
-                </div>
-                <div className="text-blue-600 text-4xl">
-                  📍
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* OTP Verification Section */}
           {showOTPInput && trackingData.status === 'arrived' && (
@@ -385,53 +294,6 @@ const TrackOrder = () => {
           )}
         </div>
 
-        {/* Delivery Partner Info */}
-        {trackingData.deliveryPartnerId && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Your Delivery Partner</h3>
-            <div className="flex items-center gap-6">
-              {/* Avatar */}
-              {trackingData.deliveryPartnerId.photoUrl ? (
-                <img
-                  src={trackingData.deliveryPartnerId.photoUrl}
-                  alt="Delivery partner"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                  {trackingData.deliveryPartnerId.name?.charAt(0)?.toUpperCase() || '👤'}
-                </div>
-              )}
-
-              <div className="flex-1">
-                <div className="font-bold text-gray-900 text-lg flex items-center gap-2">
-                  {trackingData.deliveryPartnerId.name}
-                  {trackingData.deliveryPartnerId.statistics?.avgRating && (
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm font-medium">
-                      ⭐ {trackingData.deliveryPartnerId.statistics.avgRating.toFixed(1)}
-                    </span>
-                  )}
-                </div>
-                <div className="text-gray-600 mb-1">{trackingData.deliveryPartnerId.mobile}</div>
-                {trackingData.deliveryPartnerId.vehicleDetails && (
-                  <div className="text-sm text-gray-500 capitalize">
-                    {trackingData.deliveryPartnerId.vehicleDetails.type} • {trackingData.deliveryPartnerId.vehicleDetails.plateNumber}
-                  </div>
-                )}
-              </div>
-
-              {/* Call button */}
-              {trackingData.deliveryPartnerId.mobile && (
-                <a
-                  href={`tel:${trackingData.deliveryPartnerId.mobile}`}
-                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
-                >
-                  📞 Call Partner
-                </a>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Delivery Timeline */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">

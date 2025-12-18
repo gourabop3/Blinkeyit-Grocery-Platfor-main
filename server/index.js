@@ -15,6 +15,7 @@ const categoryRouter = require("./routes/category.route");
 const uploadRouter = require("./routes/upload.route");
 const subCategoryRouter = require("./routes/subCategory.route");
 const productRouter = require("./routes/product.route");
+const rechargeProductRouter = require("./routes/rechargeProduct.route");
 const cartRouter = require("./routes/cart.route");
 const addressRouter = require("./routes/address.route");
 const orderRouter = require("./routes/order.route");
@@ -24,7 +25,6 @@ const reviewRouter = require("./routes/review.route");
 const wishlistRouter = require("./routes/wishlist.route");
 const loyaltyRouter = require("./routes/loyalty.route");
 // Delivery system routes
-const deliveryPartnerRouter = require("./routes/deliveryPartner.routes");
 const deliveryTrackingRouter = require("./routes/deliveryTracking.routes");
 // Coupon system routes
 const couponRouter = require("./routes/coupon.route");
@@ -95,6 +95,7 @@ app.use("/api/category", categoryRouter);
 app.use("/api/file", uploadRouter);
 app.use("/api/subcategory", subCategoryRouter);
 app.use("/api/product", productRouter);
+app.use("/api/recharge-product", rechargeProductRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
@@ -104,7 +105,6 @@ app.use("/api/review", reviewRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/loyalty", loyaltyRouter);
 // Delivery system routes
-app.use("/api/delivery-partner", deliveryPartnerRouter);
 app.use("/api/delivery-tracking", deliveryTrackingRouter);
 // Coupon system routes
 app.use("/api/coupon", couponRouter);

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { IoSearch } from "react-icons/io5";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { TypeAnimation } from 'react-type-animation';
 import { FaArrowLeft } from "react-icons/fa";
 import useMobile from '../hooks/useMobile';
 
@@ -10,6 +9,7 @@ const Search = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const [isSearchPage,setIsSearchPage] = useState(false)
+    const [isFocused, setIsFocused] = useState(false)
     const [ isMobile ] = useMobile()
     const params = useLocation()
     const searchText = params.search.slice(3)
@@ -30,61 +30,76 @@ const Search = () => {
         navigate(url)
     }
 
+    const handleFocus = () => {
+        setIsFocused(true)
+    }
+
+    const handleBlur = () => {
+        setIsFocused(false)
+    }
+
   return (
-    <div className='w-full  min-w-[300px] lg:min-w-[420px] h-11 lg:h-12 rounded-lg border overflow-hidden flex items-center text-neutral-500 bg-slate-50 group focus-within:border-primary-200 '>
-        <div>
+    <div className={`
+        w-full min-w-[300px] lg:min-w-[420px] 
+        h-12 lg:h-14 
+        rounded-full lg:rounded-2xl
+        overflow-hidden 
+        flex items-center 
+        transition-all duration-300 ease-in-out
+        ${isFocused || isSearchPage 
+            ? 'bg-white shadow-lg border-2 border-blue-500 scale-[1.02]' 
+            : 'bg-gray-50 hover:bg-gray-100 border border-gray-200 shadow-sm hover:shadow-md'
+        }
+        group
+    `}>
+        <div className="flex items-center justify-center pl-4 lg:pl-5">
             {
                 (isMobile && isSearchPage ) ? (
-                    <Link to={"/"} className='flex justify-center items-center h-full p-2 m-1 group-focus-within:text-primary-200 bg-white rounded-full shadow-md'>
-                        <FaArrowLeft size={20}/>
+                    <Link 
+                        to={"/"} 
+                        className='flex justify-center items-center h-9 w-9 rounded-full hover:bg-gray-100 transition-colors duration-200 text-gray-600 hover:text-gray-900'
+                    >
+                        <FaArrowLeft size={18}/>
                     </Link>
                 ) :(
-                    <button className='flex justify-center items-center h-full p-3 group-focus-within:text-primary-200'>
+                    <button className={`
+                        flex justify-center items-center 
+                        h-10 w-10 
+                        rounded-full
+                        transition-all duration-200
+                        ${isFocused || isSearchPage 
+                            ? 'text-blue-600' 
+                            : 'text-gray-400 group-hover:text-gray-600'
+                        }
+                    `}>
                         <IoSearch size={22}/>
                     </button>
                 )
             }
         </div>
-        <div className='w-full h-full'>
+        <div className='flex-1 h-full'>
             {
                 !isSearchPage ? (
-                     //not in search page
-                     <div onClick={redirectToSearchPage} className='w-full h-full flex items-center'>
-                        <TypeAnimation
-                                sequence={[
-                                    // Same substring at the start will only be typed out once, initially
-                                    'Search "milk"',
-                                    1000, // wait 1s before replacing "Mice" with "Hamsters"
-                                    'Search "bread"',
-                                    1000,
-                                    'Search "sugar"',
-                                    1000,
-                                    'Search "panner"',
-                                    1000,
-                                    'Search "chocolate"',
-                                    1000,
-                                    'Search "curd"',
-                                    1000,
-                                    'Search "rice"',
-                                    1000,
-                                    'Search "egg"',
-                                    1000,
-                                    'Search "chips"',
-                                ]}
-                                wrapper="span"
-                                speed={50}
-                                repeat={Infinity}
-                            />
+                     //not in search page - show clickable placeholder
+                     <div 
+                        onClick={redirectToSearchPage} 
+                        className='w-full h-full flex items-center px-2 cursor-text'
+                    >
+                        <span className="text-gray-400 text-sm lg:text-base">
+                            Search products...
+                        </span>
                      </div>
                 ) : (
-                    //when i was search page
-                    <div className='w-full h-full'>
+                    //when on search page
+                    <div className='w-full h-full flex items-center'>
                         <input
                             type='text'
-                            placeholder='Search for atta dal and more.'
+                            placeholder='Search products...'
                             autoFocus
                             defaultValue={searchText}
-                            className='bg-transparent w-full h-full outline-none'
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            className='bg-transparent w-full h-full outline-none px-2 text-gray-900 placeholder:text-gray-400 text-sm lg:text-base'
                             onChange={handleOnChange}
                         />
                     </div>

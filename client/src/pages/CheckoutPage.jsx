@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useGlobalContext } from '../provider/GlobalProvider'
 import { DisplayPriceInRupees } from '../utils/DisplayPriceInRupees'
-import AddAddress from '../components/AddAddress'
 import { useSelector } from 'react-redux'
 import AxiosToastError from '../utils/AxiosToastError'
 import Axios from '../utils/Axios'
@@ -9,63 +8,18 @@ import SummaryApi from '../common/SummaryApi'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
-import { FiCreditCard, FiTruck, FiLoader } from 'react-icons/fi'
+import { FiCreditCard, FiLoader, FiUser, FiMail, FiPhone } from 'react-icons/fi'
+import { useForm } from 'react-hook-form'
 
 const CheckoutPage = () => {
-  const { notDiscountTotalPrice, totalPrice, totalQty, fetchCartItem,fetchOrder } = useGlobalContext()
-  const [openAddress, setOpenAddress] = useState(false)
-  const addressList = useSelector(state => state.addresses.addressList)
-  const [selectAddress, setSelectAddress] = useState(0)
+  const { notDiscountTotalPrice, totalPrice, totalQty, fetchCartItem, fetchOrder } = useGlobalContext()
   const cartItemsList = useSelector(state => state.cartItem.cart)
   const navigate = useNavigate()
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [isProcessingCOD, setIsProcessingCOD] = useState(false)
+  const { register, handleSubmit, formState: { errors } } = useForm()
 
-  const handleCashOnDelivery = async() => {
-      try {
-          setIsProcessingCOD(true)
-          const response = await Axios({
-            ...SummaryApi.CashOnDeliveryOrder,
-            data : {
-              list_items : cartItemsList,
-              addressId : addressList[selectAddress]?._id,
-              subTotalAmt : notDiscountTotalPrice,
-              totalAmt : totalPrice,
-            }
-          })
-
-          const { data : responseData } = response
-
-          if(responseData.success){
-              toast.success(responseData.message)
-              if(fetchCartItem){
-                fetchCartItem()
-              }
-              if(fetchOrder){
-                fetchOrder()
-              }
-              navigate('/success',{
-                state : {
-                  text : "Order"
-                }
-              })
-          }
-
-      } catch (error) {
-        AxiosToastError(error)
-      } finally {
-        setIsProcessingCOD(false)
-      }
-  }
-
-  const handleOnlinePayment = async()=>{
+  const handleOnlinePayment = async (formData) => {
     try {
-        // Check if address is selected
-        if (!addressList[selectAddress]?._id) {
-          toast.error("Please select a delivery address")
-          return
-        }
-
         // Check if cart has items
         if (!cartItemsList || cartItemsList.length === 0) {
           toast.error("Your cart is empty")
@@ -95,7 +49,9 @@ const CheckoutPage = () => {
             ...SummaryApi.payment_url,
             data : {
               list_items : cartItemsList,
-              addressId : addressList[selectAddress]?._id,
+              customerName: formData.name,
+              customerEmail: formData.email,
+              customerPhone: formData.phone,
               subTotalAmt : notDiscountTotalPrice,
               totalAmt : totalPrice,
             }
@@ -138,80 +94,127 @@ const CheckoutPage = () => {
   }
 
   return (
-    <section className='bg-blue-50 min-h-screen'>
-      <div className='container mx-auto p-4 flex flex-col lg:flex-row w-full gap-5 justify-between'>
-        <div className='w-full'>
-          {/***address***/}
-          <h3 className='text-lg font-semibold mb-4'>Choose your address</h3>
-          <div className='bg-white p-4 rounded-lg shadow-sm'>
-            {
-              addressList.map((address, index) => {
-                return (
-                  <label key={index} htmlFor={"address" + index} className={!address.status ? "hidden" : "block mb-3"}>
-                    <div className={`border rounded-lg p-4 flex gap-3 hover:bg-blue-50 cursor-pointer transition-colors ${selectAddress == index ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                      <div className="mt-1">
-                        <input 
-                          id={"address" + index} 
-                          type='radio' 
-                          value={index} 
-                          onChange={(e) => setSelectAddress(e.target.value)} 
-                          name='address'
-                          checked={selectAddress == index}
-                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{address.address_line}</p>
-                        <p className="text-gray-600">{address.city}</p>
-                        <p className="text-gray-600">{address.state}</p>
-                        <p className="text-gray-600">{address.country} - {address.pincode}</p>
-                        <p className="text-gray-600">{address.mobile}</p>
-                      </div>
-                    </div>
-                  </label>
-                )
-              })
-            }
-            <div onClick={() => setOpenAddress(true)} className='h-16 bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg flex justify-center items-center cursor-pointer hover:bg-blue-100 transition-colors'>
-              <span className="text-blue-600 font-medium">+ Add address</span>
-            </div>
+    <section className='bg-gray-50 min-h-screen py-8'>
+      <div className='container mx-auto px-4 flex flex-col lg:flex-row w-full gap-6 justify-between max-w-6xl'>
+        <div className='w-full lg:w-2/3'>
+          {/***Customer Information Form***/}
+          <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
+            <h3 className='text-2xl font-bold text-gray-900 mb-6'>Contact Information</h3>
+            <form onSubmit={handleSubmit((data) => {})} className='space-y-5'>
+              {/* Name Field */}
+              <div>
+                <label htmlFor="name" className='block text-sm font-medium text-gray-700 mb-2'>
+                  <FiUser className="inline mr-2" />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  {...register('name', { 
+                    required: 'Name is required',
+                    minLength: { value: 2, message: 'Name must be at least 2 characters' }
+                  })}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 ${
+                    errors.name 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
+                  placeholder="Enter your full name"
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div>
+                <label htmlFor="email" className='block text-sm font-medium text-gray-700 mb-2'>
+                  <FiMail className="inline mr-2" />
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  {...register('email', { 
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  })}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 ${
+                    errors.email 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
+                  placeholder="your.email@example.com"
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+
+              {/* Phone Field */}
+              <div>
+                <label htmlFor="phone" className='block text-sm font-medium text-gray-700 mb-2'>
+                  <FiPhone className="inline mr-2" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  {...register('phone', { 
+                    required: 'Phone number is required',
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: 'Please enter a valid 10-digit phone number'
+                    }
+                  })}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 ${
+                    errors.phone 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
+                  placeholder="1234567890"
+                />
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                )}
+              </div>
+            </form>
           </div>
         </div>
 
-        <div className='w-full max-w-md bg-white py-6 px-4 rounded-lg shadow-sm h-fit'>
+        <div className='w-full lg:w-1/3 bg-white py-6 px-6 rounded-xl shadow-sm border border-gray-200 h-fit sticky top-4'>
           {/**summary**/}
-          <h3 className='text-lg font-semibold mb-4'>Order Summary</h3>
+          <h3 className='text-xl font-bold text-gray-900 mb-6'>Order Summary</h3>
           <div className='space-y-4'>
-            <h4 className='font-semibold text-gray-900'>Bill details</h4>
-            <div className='space-y-2'>
-              <div className='flex gap-4 justify-between'>
-                <p className="text-gray-600">Items total</p>
+            <div className='space-y-3'>
+              <div className='flex justify-between items-center'>
+                <p className="text-gray-600">Items ({totalQty})</p>
                 <p className='flex items-center gap-2'>
-                  <span className='line-through text-gray-400'>{DisplayPriceInRupees(notDiscountTotalPrice)}</span>
-                  <span className="font-medium">{DisplayPriceInRupees(totalPrice)}</span>
+                  <span className='line-through text-gray-400 text-sm'>{DisplayPriceInRupees(notDiscountTotalPrice)}</span>
+                  <span className="font-semibold text-gray-900">{DisplayPriceInRupees(totalPrice)}</span>
                 </p>
               </div>
-              <div className='flex gap-4 justify-between'>
-                <p className="text-gray-600">Quantity total</p>
-                <p className='flex items-center gap-2'>{totalQty} item{totalQty > 1 ? 's' : ''}</p>
+              <div className='flex justify-between items-center'>
+                <p className="text-gray-600">Delivery</p>
+                <p className='text-green-600 font-medium'>Free</p>
               </div>
-              <div className='flex gap-4 justify-between'>
-                <p className="text-gray-600">Delivery Charge</p>
-                <p className='flex items-center gap-2 text-green-600 font-medium'>Free</p>
-              </div>
-              <hr className="my-3" />
-              <div className='font-semibold flex items-center justify-between gap-4 text-lg'>
-                <p>Grand total</p>
+              <hr className="my-4 border-gray-200" />
+              <div className='font-bold flex items-center justify-between text-xl pt-2'>
+                <p className="text-gray-900">Total</p>
                 <p className="text-blue-600">{DisplayPriceInRupees(totalPrice)}</p>
               </div>
             </div>
           </div>
           
-          <div className='w-full flex flex-col gap-4 mt-6'>
+          <div className='w-full flex flex-col gap-3 mt-8'>
             <button 
-              className={`py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition-colors flex items-center justify-center gap-2 ${isProcessingPayment ? 'opacity-70' : ''}`} 
-              onClick={handleOnlinePayment}
-              disabled={isProcessingPayment || isProcessingCOD}
+              type="button"
+              className={`py-3.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg w-full ${isProcessingPayment ? 'opacity-70' : ''}`} 
+              onClick={handleSubmit(handleOnlinePayment)}
+              disabled={isProcessingPayment}
             >
               {isProcessingPayment ? (
                 <>
@@ -221,37 +224,13 @@ const CheckoutPage = () => {
               ) : (
                 <>
                   <FiCreditCard className="w-5 h-5" />
-                  Online Payment
-                </>
-              )}
-            </button>
-
-            <button 
-              className={`py-3 px-4 border-2 border-green-600 font-semibold text-green-600 hover:bg-green-600 hover:text-white disabled:border-green-400 disabled:text-green-400 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center gap-2 ${isProcessingCOD ? 'opacity-70' : ''}`} 
-              onClick={handleCashOnDelivery}
-              disabled={isProcessingPayment || isProcessingCOD}
-            >
-              {isProcessingCOD ? (
-                <>
-                  <FiLoader className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <FiTruck className="w-5 h-5" />
-                  Cash on Delivery
+                  Pay Online
                 </>
               )}
             </button>
           </div>
         </div>
       </div>
-
-      {
-        openAddress && (
-          <AddAddress close={() => setOpenAddress(false)} />
-        )
-      }
     </section>
   )
 }

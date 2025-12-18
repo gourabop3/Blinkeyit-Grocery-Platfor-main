@@ -12,7 +12,7 @@ const deliveryTrackingSchema = new mongoose.Schema(
     deliveryPartnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DeliveryPartner",
-      required: true,
+      required: false,
     },
     
     // Delivery Status Timeline
@@ -287,9 +287,8 @@ deliveryTrackingSchema.methods.completeDelivery = function(customerFeedback = nu
 };
 
 // Static methods
-deliveryTrackingSchema.statics.getActiveDeliveries = function(deliveryPartnerId) {
+deliveryTrackingSchema.statics.getActiveDeliveries = function() {
   return this.find({
-    deliveryPartnerId,
     status: { $nin: ["delivered", "failed", "returned", "cancelled"] },
   }).populate("orderId").sort({ createdAt: -1 });
 };

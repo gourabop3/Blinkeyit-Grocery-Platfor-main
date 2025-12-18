@@ -16,6 +16,8 @@ import CategoryPage from "../pages/CategoryPage";
 import SubCategoryPage from "../pages/SubCategoryPage";
 import UploadProduct from "../pages/UploadProduct";
 import ProductAdmin from "../pages/ProductAdmin";
+import UploadRechargeProduct from "../pages/UploadRechargeProduct";
+import RechargeProductAdmin from "../pages/RechargeProductAdmin";
 import AdminPermision from "../layouts/AdminPermision";
 import AdminLayout from "../layouts/AdminLayout";
 import NewAdminDashboard from "../pages/NewAdminDashboard";
@@ -30,7 +32,6 @@ import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import VerifyEmail from "../pages/VerifyEmail";
 import TrackOrder from "../pages/TrackOrder";
-import AddDeliveryPartner from "../pages/AddDeliveryPartner";
 import CouponManagement from "../pages/admin/CouponManagement";
 import { Navigate } from "react-router-dom";
 
@@ -135,8 +136,12 @@ const router = createBrowserRouter([
             element: <ProductAdmin />,
           },
           {
-            path: "partners/add",
-            element: <AddDeliveryPartner />,
+            path: "recharge-product",
+            element: <RechargeProductAdmin />,
+          },
+          {
+            path: "upload-recharge-product",
+            element: <UploadRechargeProduct />,
           },
           {
             path: "coupons",
@@ -153,10 +158,6 @@ const router = createBrowserRouter([
           {
             path: "app-banners",
             element: <div className="p-6"><h1 className="text-2xl font-bold">App Banners</h1><p className="text-gray-600">Coming soon...</p></div>,
-          },
-          {
-            path: "delivery-partners",
-            element: <div className="p-6"><h1 className="text-2xl font-bold">Delivery Partners</h1><p className="text-gray-600">Manage delivery partners...</p></div>,
           },
           {
             path: "delivery-tracking",

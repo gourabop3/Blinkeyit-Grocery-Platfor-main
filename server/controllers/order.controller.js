@@ -5,7 +5,6 @@ const OrderModel = require("../models/order.model.js");
 const UserModel = require("../models/user.model.js");
 const ProductModel = require("../models/product.model.js");
 const { awardPurchasePointsController } = require("./loyalty.controller.js");
-const { autoAssignOrderController } = require("./deliveryPartner.controller.js");
 
 // Direct cart clearing controller
 const clearCartController = async (request, response) => {
@@ -52,7 +51,7 @@ const clearCartController = async (request, response) => {
 const CashOnDeliveryOrderController = async (request, response) => {
   try {
     const userId = request.userId; // auth middleware
-    const { list_items, totalAmt, addressId, subTotalAmt } = request.body;
+    const { list_items, totalAmt, addressId, subTotalAmt, customerName, customerEmail, customerPhone } = request.body;
 
     // Function to build bulkWrite operations for stock decrement
     const buildStockOps = (items) =>
@@ -80,7 +79,12 @@ const CashOnDeliveryOrderController = async (request, response) => {
       products: productsPayload,
       paymentId: "",
       payment_status: "CASH ON DELIVERY",
-      delivery_address: addressId,
+      delivery_address: addressId || null,
+      customerInfo: customerName || customerEmail || customerPhone ? {
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+      } : undefined,
       subTotalAmt,
       totalAmt,
     });
@@ -112,25 +116,6 @@ const CashOnDeliveryOrderController = async (request, response) => {
     }
 
     // Auto-assign delivery partner
-    try {
-      // Create a mock request object for auto-assignment
-      const assignRequest = { body: { orderId: generatedOrder._id } };
-      const assignResponse = {
-        json: () => {},
-        status: () => ({ json: () => {} })
-      };
-      
-      // Don't wait for assignment, let it happen asynchronously
-      setTimeout(async () => {
-        try {
-          await autoAssignOrderController(assignRequest, assignResponse);
-        } catch (assignError) {
-          console.error("Error auto-assigning delivery partner:", assignError);
-        }
-      }, 2000); // 2 second delay to allow order to be fully processed
-    } catch (error) {
-      console.error("Error initiating delivery assignment:", error);
-    }
 
     return response.json({
       message: "Order successfully",
@@ -156,7 +141,7 @@ const pricewithDiscount = (price, dis = 1) => {
 const paymentController = async (request, response) => {
   try {
     const userId = request.userId; // auth middleware
-    const { list_items, totalAmt, addressId, subTotalAmt } = request.body;
+    const { list_items, totalAmt, addressId, subTotalAmt, customerName, customerEmail, customerPhone } = request.body;
 
     console.log("Creating online payment order for user:", userId);
     console.log("Cart items:", list_items.length);
@@ -181,7 +166,12 @@ const paymentController = async (request, response) => {
       products: productsPayload,
       paymentId: "", // Will be updated by webhook
       payment_status: "PENDING", // Initial status
-      delivery_address: addressId,
+      delivery_address: addressId || null,
+      customerInfo: customerName || customerEmail || customerPhone ? {
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+      } : undefined,
       subTotalAmt,
       totalAmt,
     });
@@ -216,7 +206,7 @@ const paymentController = async (request, response) => {
       submit_type: "pay",
       mode: "payment",
       payment_method_types: ["card"],
-      customer_email: user.email,
+      customer_email: customerEmail || user.email,
       metadata: {
         userId: userId,
         addressId: addressId,

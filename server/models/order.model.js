@@ -46,7 +46,22 @@ const orderSchema = new mongoose.Schema(
     delivery_address: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Address",
-      required: true,
+      required: false,
+    },
+    // Customer contact information (for online tools style checkout)
+    customerInfo: {
+      name: {
+        type: String,
+        required: false,
+      },
+      email: {
+        type: String,
+        required: false,
+      },
+      phone: {
+        type: String,
+        required: false,
+      },
     },
     subTotalAmt: {
       type: Number,
@@ -110,10 +125,6 @@ const orderSchema = new mongoose.Schema(
     },
     
     // Enhanced Delivery Information
-    assignedDeliveryPartner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "DeliveryPartner",
-    },
     deliveryType: {
       type: String,
       enum: ["standard", "express", "scheduled"],
@@ -384,8 +395,7 @@ orderSchema.methods.getDeliveryMetrics = function() {
 // Static method to get orders ready for delivery assignment
 orderSchema.statics.getOrdersReadyForDelivery = function() {
   return this.find({
-    order_status: "Ready",
-    assignedDeliveryPartner: { $exists: false }
+    order_status: "Ready"
   }).populate("delivery_address userId");
 };
 
@@ -393,14 +403,13 @@ orderSchema.statics.getOrdersReadyForDelivery = function() {
 orderSchema.statics.getActiveDeliveryOrders = function() {
   return this.find({
     order_status: { $in: ["Assigned", "Picked_up", "In_transit", "Arrived"] }
-  }).populate("assignedDeliveryPartner delivery_address userId");
+  }).populate("delivery_address userId");
 };
 
 // Indexes for better performance
 orderSchema.index({ orderId: 1 });
 orderSchema.index({ userId: 1 });
 orderSchema.index({ order_status: 1 });
-orderSchema.index({ assignedDeliveryPartner: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ "deliveryOTP.expiresAt": 1 });
 

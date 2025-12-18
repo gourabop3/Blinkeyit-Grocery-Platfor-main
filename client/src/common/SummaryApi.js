@@ -146,10 +146,6 @@ const SummaryApi = {
     url: "/api/address/disable",
     method: "delete",
   },
-  CashOnDeliveryOrder: {
-    url: "/api/order/cash-on-delivery",
-    method: "post",
-  },
       clearCart: {
         url: "/api/order/clear-cart",
         method: "post"
@@ -286,65 +282,6 @@ const SummaryApi = {
     method: "post",
   },
 
-  // Delivery Partner APIs
-  registerDeliveryPartner: {
-    url: "/api/delivery-partner/register",
-    method: "post",
-  },
-  loginDeliveryPartner: {
-    url: "/api/delivery-partner/login",
-    method: "post",
-  },
-  getPartnerProfile: {
-    url: "/api/delivery-partner/profile",
-    method: "get",
-  },
-  updatePartnerProfile: {
-    url: "/api/delivery-partner/profile",
-    method: "put",
-  },
-  updatePartnerLocation: {
-    url: "/api/delivery-partner/location",
-    method: "post",
-  },
-  togglePartnerAvailability: {
-    url: "/api/delivery-partner/availability",
-    method: "post",
-  },
-  getActiveOrders: {
-    url: "/api/delivery-partner/orders/active",
-    method: "get",
-  },
-  acceptOrder: {
-    url: "/api/delivery-partner/orders/accept",
-    method: "post",
-  },
-  updateDeliveryStatus: {
-    url: "/api/delivery-partner/orders/status",
-    method: "post",
-  },
-  completeDelivery: {
-    url: "/api/delivery-partner/orders/complete",
-    method: "post",
-  },
-  getPartnerEarnings: {
-    url: "/api/delivery-partner/earnings",
-    method: "get",
-  },
-
-  // Admin Delivery Management APIs
-  getAllDeliveryPartners: {
-    url: "/api/delivery-partner/admin/all",
-    method: "get",
-  },
-  updatePartnerStatus: {
-    url: "/api/delivery-partner/admin/:partnerId/status",
-    method: "put",
-  },
-  autoAssignOrder: {
-    url: "/api/delivery-partner/admin/auto-assign",
-    method: "post",
-  },
   getAllActiveDeliveries: {
     url: "/api/delivery-tracking/admin/active",
     method: "get",
@@ -400,6 +337,36 @@ const SummaryApi = {
   },
   generateBulkCoupons: {
     url: "/api/coupon/bulk-generate",
+    method: "post",
+  },
+
+  // Recharge Product APIs
+  createRechargeProduct: {
+    url: "/api/recharge-product/create",
+    method: "post",
+  },
+  getRechargeProduct: {
+    url: "/api/recharge-product/get",
+    method: "post",
+  },
+  getRechargeProductDetails: {
+    url: "/api/recharge-product/details/:id",
+    method: "get",
+  },
+  getRechargeProductByCategory: {
+    url: "/api/recharge-product/by-category",
+    method: "post",
+  },
+  updateRechargeProductDetails: {
+    url: "/api/recharge-product/update",
+    method: "put",
+  },
+  deleteRechargeProduct: {
+    url: "/api/recharge-product/delete",
+    method: "delete",
+  },
+  searchRechargeProduct: {
+    url: "/api/recharge-product/search",
     method: "post",
   },
 };

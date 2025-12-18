@@ -42,7 +42,6 @@ const NewAdminDashboard = () => {
   });
   const [deliveryData, setDeliveryData] = useState({
     activeDeliveries: [],
-    deliveryPartners: [],
     deliveryAnalytics: null,
   });
   const [loading, setLoading] = useState(true);
@@ -99,11 +98,6 @@ const NewAdminDashboard = () => {
         ...SummaryApi.getAllActiveDeliveries
       });
 
-      // Fetch delivery partners
-      const partnersResponse = await Axios({
-        ...SummaryApi.getAllDeliveryPartners
-      });
-
       // Fetch delivery analytics
       const analyticsResponse = await Axios({
         ...SummaryApi.getDeliveryAnalytics
@@ -111,7 +105,6 @@ const NewAdminDashboard = () => {
 
       setDeliveryData({
         activeDeliveries: deliveriesResponse.data.success ? deliveriesResponse.data.data.deliveries : [],
-        deliveryPartners: partnersResponse.data.success ? partnersResponse.data.data.partners : [],
         deliveryAnalytics: analyticsResponse.data.success ? analyticsResponse.data.data : null,
       });
     } catch (error) {
@@ -119,44 +112,6 @@ const NewAdminDashboard = () => {
     }
   };
 
-  const assignDeliveryPartner = async (orderId, partnerId) => {
-    try {
-      const response = await Axios({
-        ...SummaryApi.autoAssignOrder,
-        data: { orderId, partnerId }
-      });
-
-      if (response.data.success) {
-        toast.success("Delivery partner assigned successfully!");
-        fetchDeliveryData();
-      } else {
-        toast.error(response.data.message || "Failed to assign delivery partner");
-      }
-    } catch (error) {
-      toast.error("Failed to assign delivery partner");
-      console.error("Assignment error:", error);
-    }
-  };
-
-  const updatePartnerStatus = async (partnerId, status) => {
-    try {
-      const response = await Axios({
-        ...SummaryApi.updatePartnerStatus,
-        url: SummaryApi.updatePartnerStatus.url.replace(':partnerId', partnerId),
-        data: { status }
-      });
-
-      if (response.data.success) {
-        toast.success(`Partner status updated to ${status}`);
-        fetchDeliveryData();
-      } else {
-        toast.error(response.data.message || "Failed to update partner status");
-      }
-    } catch (error) {
-      toast.error("Failed to update partner status");
-      console.error("Status update error:", error);
-    }
-  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -200,68 +155,6 @@ const NewAdminDashboard = () => {
     </div>
   );
 
-  const DeliveryPartnerCard = ({ partner }) => (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-all">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-            partner.isAvailable ? 'bg-green-500' : 'bg-gray-400'
-          }`}>
-            {partner.name?.charAt(0)?.toUpperCase() || 'P'}
-          </div>
-          <div>
-            <div className="font-semibold text-gray-900">{partner.name}</div>
-            <div className="text-xs text-gray-500">{partner.mobile}</div>
-          </div>
-        </div>
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-          partner.isAvailable 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-gray-100 text-gray-800'
-        }`}>
-          {partner.isAvailable ? 'Available' : 'Busy'}
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div>
-          <div className="text-lg font-bold text-blue-600">{partner.statistics?.completedDeliveries || 0}</div>
-          <div className="text-xs text-gray-500">Deliveries</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-yellow-600">
-            {partner.statistics?.avgRating ? `${partner.statistics.avgRating.toFixed(1)}⭐` : 'N/A'}
-          </div>
-          <div className="text-xs text-gray-500">Rating</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-green-600">
-            ₹{partner.statistics?.earnings || 0}
-          </div>
-          <div className="text-xs text-gray-500">Earnings</div>
-        </div>
-      </div>
-
-      <div className="mt-3 flex space-x-2">
-        <button
-          onClick={() => updatePartnerStatus(partner._id, partner.isAvailable ? 'inactive' : 'active')}
-          className={`flex-1 py-1 px-2 rounded text-xs font-medium transition-colors ${
-            partner.isAvailable 
-              ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-              : 'bg-green-100 text-green-700 hover:bg-green-200'
-          }`}
-        >
-          {partner.isAvailable ? 'Deactivate' : 'Activate'}
-        </button>
-        <a
-          href={`tel:${partner.mobile}`}
-          className="flex-1 py-1 px-2 bg-blue-100 text-blue-700 rounded text-xs font-medium text-center hover:bg-blue-200 transition-colors"
-        >
-          📞 Call
-        </a>
-      </div>
-    </div>
-  );
 
   const ActiveDeliveryCard = ({ delivery }) => {
     const getStatusColor = (status) => {
@@ -382,14 +275,12 @@ const NewAdminDashboard = () => {
               Live Deliveries
             </button>
             <button
-              onClick={() => setActiveTab('partners')}
               className={`px-4 py-2 text-sm font-medium rounded-r-lg transition-colors ${
-                activeTab === 'partners'
+                false
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              Partners
             </button>
           </div>
           
@@ -474,15 +365,6 @@ const NewAdminDashboard = () => {
               bgColor="bg-gradient-to-br from-blue-50 to-blue-100"
               iconBg="bg-blue-200"
               onClick={() => setActiveTab('deliveries')}
-            />
-            <StatCard
-              icon={FiUser}
-              title="Delivery Partners"
-              value={deliveryData.deliveryPartners.length}
-              color="text-green-600"
-              bgColor="bg-gradient-to-br from-green-50 to-green-100"
-              iconBg="bg-green-200"
-              onClick={() => setActiveTab('partners')}
             />
             <StatCard
               icon={FiCheckCircle}
@@ -650,54 +532,12 @@ const NewAdminDashboard = () => {
             <div className="bg-white rounded-xl p-12 text-center">
               <FiTruck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-500 mb-2">No Active Deliveries</h3>
-              <p className="text-gray-400">Active deliveries will appear here when orders are assigned to delivery partners</p>
+              <p className="text-gray-400">Active deliveries will appear here</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Delivery Partners Tab */}
-      {activeTab === 'partners' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Delivery Partners Management</h2>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={fetchDeliveryData}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Refresh Partners
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/admin/partners/add')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add Partner
-              </button>
-            </div>
-          </div>
-
-          {deliveryData.deliveryPartners.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {deliveryData.deliveryPartners.map((partner) => (
-                <DeliveryPartnerCard key={partner._id} partner={partner} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl p-12 text-center">
-              <FiUser className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-500 mb-2">No Delivery Partners</h3>
-              <p className="text-gray-400">Register delivery partners to start managing deliveries</p>
-              <button
-                onClick={() => navigate('/dashboard/admin/partners/add')}
-                className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add First Partner
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Footer with last updated time */}
       {lastUpdated && (

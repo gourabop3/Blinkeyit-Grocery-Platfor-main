@@ -101,41 +101,6 @@ const getTrackingByOrderController = async (request, response) => {
             }
           },
         });
-      }
-    }
-
-    // Calculate live distance and ETA if partner location is available
-    let liveUpdates = {};
-    if (tracking.deliveryPartnerId && tracking.deliveryPartnerId.currentLocation) {
-      const partnerLoc = tracking.deliveryPartnerId.currentLocation;
-      const customerLoc = tracking.customerLocation;
-      
-      if (partnerLoc.latitude && partnerLoc.longitude) {
-        // Calculate distance using Haversine formula
-        const R = 6371; // Earth's radius in km
-        const dLat = (customerLoc.latitude - partnerLoc.latitude) * Math.PI / 180;
-        const dLon = (customerLoc.longitude - partnerLoc.longitude) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(partnerLoc.latitude * Math.PI / 180) * Math.cos(customerLoc.latitude * Math.PI / 180) *
-          Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distanceKm = R * c;
-        
-        // Estimate arrival time (assuming average speed of 25 km/h in city)
-        const estimatedMinutes = Math.round((distanceKm / 25) * 60);
-        const estimatedArrival = new Date();
-        estimatedArrival.setMinutes(estimatedArrival.getMinutes() + estimatedMinutes);
-        
-        liveUpdates = {
-          distanceToCustomer: Math.round(distanceKm * 100) / 100, // Round to 2 decimal places
-          estimatedArrival,
-          partnerLocation: {
-            latitude: partnerLoc.latitude,
-            longitude: partnerLoc.longitude,
-            lastUpdated: partnerLoc.lastUpdated,
-          },
-        };
-      }
     }
 
     console.log('🎯 Sending tracking response with status:', tracking.status);
@@ -146,7 +111,6 @@ const getTrackingByOrderController = async (request, response) => {
       success: true,
       data: {
         ...tracking.toObject(),
-        liveUpdates,
       },
     });
   } catch (error) {
@@ -357,22 +321,6 @@ const submitDeliveryFeedbackController = async (request, response) => {
     tracking.analytics.customerSatisfaction = rating;
     await tracking.save();
 
-    // Update partner's rating
-    const partner = await DeliveryPartnerModel.findById(tracking.deliveryPartnerId);
-    if (partner) {
-      await partner.updateRating(rating);
-      
-      // Add to partner's ratings array
-      partner.ratings.push({
-        orderId: tracking.orderId,
-        customerId: userId,
-        rating,
-        comment,
-        createdAt: new Date(),
-      });
-      await partner.save();
-    }
-
     return response.json({
       message: "Feedback submitted successfully",
       error: false,
@@ -570,47 +518,6 @@ const getDeliveryAnalyticsController = async (request, response) => {
       }
     ]);
     
-    // Top performing partners
-    const topPartners = await DeliveryTrackingModel.aggregate([
-      { 
-        $match: { 
-          ...filter, 
-          status: "delivered" 
-        } 
-      },
-      {
-        $group: {
-          _id: "$deliveryPartnerId",
-          deliveries: { $sum: 1 },
-          avgTime: { $avg: "$metrics.totalDurationMinutes" },
-          avgRating: { $avg: "$analytics.customerSatisfaction" },
-          onTimeRate: {
-            $avg: { $cond: ["$analytics.onTimeDelivery", 1, 0] }
-          },
-        }
-      },
-      { $sort: { deliveries: -1 } },
-      { $limit: 10 },
-      {
-        $lookup: {
-          from: "deliverypartners",
-          localField: "_id",
-          foreignField: "_id",
-          as: "partner"
-        }
-      },
-      { $unwind: "$partner" },
-      {
-        $project: {
-          name: "$partner.name",
-          deliveries: 1,
-          avgTime: 1,
-          avgRating: 1,
-          onTimeRate: 1,
-        }
-      }
-    ]);
-    
     return response.json({
       message: "Delivery analytics retrieved",
       error: false,
@@ -619,7 +526,7 @@ const getDeliveryAnalyticsController = async (request, response) => {
         overview: analytics[0] || {},
         dailyStats,
         statusDistribution: statusStats,
-        topPartners,
+        topPartners: [], // Delivery partners removed
         period: { startDate: start, endDate: end },
       },
     });
@@ -661,14 +568,6 @@ const cancelDeliveryController = async (request, response) => {
 
     // Update order status
     await OrderModel.findByIdAndUpdate(orderId, { order_status: "Cancelled" });
-
-    // Make partner available again
-    if (tracking.deliveryPartnerId) {
-      await DeliveryPartnerModel.findByIdAndUpdate(tracking.deliveryPartnerId, {
-        'availability.isOnDuty': true,
-        lastActiveOrder: null,
-      });
-    }
 
     // Notify all parties
     emitToOrder(orderId, "delivery_cancelled", {
